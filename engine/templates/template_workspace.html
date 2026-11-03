@@ -1,0 +1,664 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AXIS // TEMPLATE WORKSPACE & DEPLOY ENGINE</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #070708;
+      --panel-bg: #0D0E13;
+      --fg: #ECEBE8;
+      --muted: #64748B;
+      --line: rgba(255, 255, 255, 0.08);
+      --font-display: 'Syne', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+      --accent: #E5B338;
+      --accent-glow: rgba(229, 179, 56, 0.35);
+    }
+
+    body.dev-mode {
+      --accent: #FF2E4C;
+      --accent-glow: rgba(255, 46, 76, 0.4);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-display);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    header {
+      padding: 16px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      background: rgba(13, 14, 19, 0.94);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+    }
+    .brand { font-size: 1.15rem; font-weight: 900; letter-spacing: -0.04em; }
+    .badge {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      padding: 4px 10px;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 4px;
+    }
+
+    .btn-action {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      border-radius: 4px;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+    }
+    .btn-action:hover {
+      box-shadow: 0 0 16px var(--accent-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 8px 16px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    /* Client View */
+    .client-spec-view {
+      padding: 50px 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: none;
+    }
+    .spec-header h1 {
+      font-size: 3.2rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      line-height: 0.95;
+    }
+    .spec-grid {
+      display: grid;
+      grid-template-columns: 1.8fr 1.2fr;
+      gap: 28px;
+      font-family: var(--font-mono);
+      margin-top: 30px;
+    }
+    .spec-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--line);
+      padding: 26px;
+      border-radius: 8px;
+    }
+    .spec-card h3 {
+      font-size: 0.95rem;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    .spec-card p {
+      font-size: 0.8rem;
+      color: #888;
+      line-height: 1.6;
+    }
+    .spec-stat {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--accent);
+      margin: 8px 0;
+      font-family: var(--font-display);
+    }
+
+    .deploy-box {
+      margin-top: 18px;
+      background: #050608;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 16px;
+      border-radius: 6px;
+    }
+    .deploy-input {
+      width: 100%;
+      background: #0e1015;
+      border: 1px solid #1e293b;
+      padding: 10px 12px;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      border-radius: 4px;
+      margin-top: 8px;
+      outline: none;
+    }
+    .deploy-terminal {
+      margin-top: 14px;
+      background: #020304;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 12px;
+      font-size: 0.72rem;
+      color: #10b981;
+      min-height: 90px;
+      border-radius: 4px;
+      white-space: pre-wrap;
+    }
+
+    /* Developer View */
+    .dev-studio-view {
+      display: none;
+      height: calc(100vh - 65px);
+      grid-template-columns: 360px 1.2fr 1fr;
+      border-top: 1px solid var(--line);
+    }
+    .pane {
+      background: var(--panel-bg);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .pane-header {
+      padding: 12px 18px;
+      background: #090A0D;
+      border-bottom: 1px solid var(--line);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .pane-content {
+      padding: 18px;
+      overflow-y: auto;
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.6;
+    }
+    .step-item {
+      background: #050608;
+      border-left: 3px solid var(--accent);
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 0 4px 4px 0;
+    }
+    .step-num { font-size: 0.65rem; color: var(--accent); font-weight: 700; }
+    .step-text { font-size: 0.75rem; color: #BBB; margin-top: 4px; }
+    .step-text code {
+      background: #161922;
+      color: #00FF66;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.7rem;
+    }
+
+    textarea.code-editor {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #00FF66;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      resize: none;
+    }
+    .output-frame {
+      width: 100%;
+      height: 100%;
+      background: #050505;
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--accent);
+      white-space: pre-wrap;
+      overflow-y: auto;
+    }
+
+    /* Checkout Overlay */
+    #checkoutLoaderModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 5, 8, 0.94);
+      backdrop-filter: blur(14px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .loader-box {
+      background: #0E1017;
+      border: 1px solid var(--accent);
+      padding: 32px;
+      border-radius: 8px;
+      text-align: center;
+      max-width: 440px;
+      width: 90%;
+      font-family: var(--font-mono);
+      box-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    @media (max-width: 1100px) {
+      .spec-grid { grid-template-columns: 1fr; }
+      .dev-studio-view { grid-template-columns: 1fr; height: auto; }
+      .pane { min-height: 380px; }
+    }
+  </style>
+</head>
+<body id="workspaceBody">
+
+  {% include 'portal_transition.html' %}
+
+  <header>
+    <div class="brand">
+      AXIS LABS // <span class="badge" id="roleBadge">TEMPLATE ENGINE</span>
+    </div>
+    <div>
+      <button class="btn-secondary" onclick="navigateThroughPortal('WORKSPACE', 'LANDING', '/')">
+        ◀ CATALOGUE
+      </button>
+    </div>
+  </header>
+
+  <!-- 1. CLIENT WORKSPACE -->
+  <main class="client-spec-view" id="clientView">
+    <div class="spec-header">
+      <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); letter-spacing: 0.2em; margin-bottom: 8px;">
+        [ ENTERPRISE COMMERCIAL SPECIFICATION & DEPLOYMENT ]
+      </div>
+      <h1 id="clientTemplateTitle">ENTERPRISE CLUSTER</h1>
+    </div>
+
+    <div class="spec-grid">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="spec-card">
+          <h3>COMMERCIAL PURPOSE & UTILITY</h3>
+          <p id="specPurpose">
+            Designed for high-concurrency payment settlements, autonomous client ledger reconciliation, and webhook pipelines with bank-grade AES-256 data encryption.
+          </p>
+        </div>
+
+        <div class="spec-card">
+          <h3>STACK & CLOUD ENVIRONMENT</h3>
+          <p>
+            • <strong>Backend:</strong> Python 3.12 + Django REST Framework + Celery<br>
+            • <strong>Database:</strong> PostgreSQL 16 (Multi-AZ Cluster)<br>
+            • <strong>Cache & Broker:</strong> Redis Cluster 7.2 (100k msg/sec throughput)<br>
+            • <strong>Containers:</strong> Docker Swarm, Kubernetes Pod, SSL Ready
+          </p>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="spec-card">
+          <h3>ESTIMATED QUOTE & LICENSING</h3>
+          <div class="spec-stat" id="specBudget">₹4,500 INR</div>
+          <p>Full commercial ownership, perpetual source code license, and 6-month cluster maintenance.</p>
+
+          <button type="button" class="btn-action" id="checkout-button" style="width: 100%; margin-top: 14px; padding: 14px;" onclick="triggerStripeCheckout()">
+            PAY NOW // STRIPE CHECKOUT
+          </button>
+        </div>
+
+        <div class="spec-card">
+          <h3>CLOUD CLUSTER DEPLOYMENT</h3>
+          <div class="deploy-box">
+            <label style="font-size:0.65rem; color:var(--muted); text-transform:uppercase;">Custom Domain Binding</label>
+            <input type="text" id="targetDomainInput" class="deploy-input" value="gateway.axis-client.io">
+
+            <label style="font-size:0.65rem; color:var(--muted); text-transform:uppercase; margin-top:10px; display:block;">Target Cloud Infrastructure</label>
+            <select id="cloudProvider" class="deploy-input">
+              <option value="AWS">AWS ECS / Fargate (US-East)</option>
+              <option value="RENDER">Render Production Cluster</option>
+              <option value="DIGITALOCEAN">DigitalOcean Kubernetes</option>
+            </select>
+
+            <button type="button" class="btn-action" style="width:100%; margin-top:14px;" onclick="triggerClientDeployment()">
+              INSTANTIATE ARCHITECTURE NOW
+            </button>
+
+            <div class="deploy-terminal" id="clientDeployLogs">>> SYSTEM STANDBY // CLICK "INSTANTIATE" TO PROVISION CLUSTER...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 2. DEVELOPER 3-PANE BUILD STUDIO -->
+  <main class="dev-studio-view" id="devView">
+    <div class="pane">
+      <div class="pane-header">
+        <span>(01) REPRODUCTION MANUAL</span>
+        <span>ENV: LINUX_PY3.12</span>
+      </div>
+      <div class="pane-content" id="stepsContainer"></div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-header">
+        <span id="editorFilename">(02) CONTROLLER.PY</span>
+        <button class="btn-action" style="padding: 6px 14px; font-size: 0.7rem;" onclick="compileDevCode()">
+          COMPILE & DISPATCH
+        </button>
+      </div>
+      <div class="pane-content" style="padding: 10px;">
+        <textarea class="code-editor" id="sourceEditor" spellcheck="false"></textarea>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-header">
+        <span>(03) KERNEL TELEMETRY</span>
+        <span style="color: #00FF66;" id="liveStatusTag">STATUS: STANDBY</span>
+      </div>
+      <div class="output-frame" id="liveOutput">
+>> KERNEL READY
+>> WRITE PYTHON CODE AND CLICK "COMPILE & DISPATCH" (OR PRESS CTRL+ENTER)...
+      </div>
+    </div>
+  </main>
+
+  <!-- Checkout Redirection Loader Modal -->
+  <div id="checkoutLoaderModal">
+    <div class="loader-box">
+      <div style="font-size: 0.7rem; color: var(--accent); letter-spacing: 0.2em;">[ ENCRYPTING ESCROW CHANNEL ]</div>
+      <h3 style="font-size: 1.15rem; margin: 10px 0 6px;">CREATING STRIPE SESSION...</h3>
+      <p style="font-size: 0.75rem; color: var(--muted);">Redirecting to official Stripe checkout terminal...</p>
+    </div>
+  </div>
+
+  <script>
+    // --- Cherry-MX Mechanical Audio Engine ---
+    const AudioEngine = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      },
+      playClick() {
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const osc1 = this.ctx.createOscillator();
+          const gain1 = this.ctx.createGain();
+          osc1.type = 'triangle';
+          osc1.frequency.setValueAtTime(1600, t);
+          osc1.frequency.exponentialRampToValueAtTime(320, t + 0.05);
+          gain1.gain.setValueAtTime(0.85, t);
+          gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+          osc1.connect(gain1);
+          gain1.connect(this.ctx.destination);
+          osc1.start(t);
+          osc1.stop(t + 0.05);
+
+          const osc2 = this.ctx.createOscillator();
+          const gain2 = this.ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(180, t);
+          osc2.frequency.exponentialRampToValueAtTime(40, t + 0.07);
+          gain2.gain.setValueAtTime(0.75, t);
+          gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+          osc2.connect(gain2);
+          gain2.connect(this.ctx.destination);
+          osc2.start(t);
+          osc2.stop(t + 0.07);
+        } catch (e) {}
+      }
+    };
+
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'Enter') compileDevCode();
+      if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
+      AudioEngine.playClick();
+    });
+
+    document.addEventListener('click', (e) => {
+      AudioEngine.init();
+      if (e.target.closest('button, input, select, textarea')) AudioEngine.playClick();
+    });
+
+    // 8 Full Steps per Template Catalog
+    const templateCatalog = {
+      1: {
+        name: 'Stripe-Grade PayCore',
+        budget: '₹4,800',
+        file: 'payment_controller.py',
+        code: `# Stripe-Grade PayCore Controller\nprint("Initializing Stripe-Grade PayCore Node...")\n\ndef process_transaction(amount, currency='INR'):\n    print(f"Routing atomic settlement: {amount} {currency}")\n    return {'status': 'SETTLED', 'latency': '12ms'}\n\nresult = process_transaction(4800)\nprint("Output ACK:", result)`,
+        steps: [
+          { num: 'STEP 01', title: 'ENVIRONMENT & ISOLATION', desc: 'Initialize Python 3.12 virtualenv: <code>python -m venv env && source env/bin/activate</code>' },
+          { num: 'STEP 02', title: 'CORE DEPENDENCIES', desc: 'Install framework stack: <code>pip install django djangorestframework celery redis psycopg2-binary stripe</code>' },
+          { num: 'STEP 03', title: 'DJANGO INSTANTIATION', desc: 'Create base app: <code>django-admin startproject paycore . && python manage.py startapp gateway</code>' },
+          { num: 'STEP 04', title: 'LEDGER SCHEMA MODELING', desc: 'Define models in <code>gateway/models.py</code> with <code>UUIDField</code>, <code>DecimalField</code>, and row-level locking for atomic balances.' },
+          { num: 'STEP 05', title: 'REDIS BROKER CONNECTION', desc: 'Configure Celery in <code>settings.py</code>: <code>CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"</code>' },
+          { num: 'STEP 06', title: 'ASYNC DISPATCH PIPELINE', desc: 'Write task in <code>gateway/tasks.py</code> with <code>@shared_task(bind=True, max_retries=3)</code> for webhook retries.' },
+          { num: 'STEP 07', title: 'API ENDPOINT ROUTING', desc: 'Expose REST controller in <code>urls.py</code> with idempotency keys to prevent duplicate transactions.' },
+          { num: 'STEP 08', title: 'DOCKER CONTAINERIZATION', desc: 'Mount multi-stage Dockerfile with Gunicorn: <code>gunicorn paycore.wsgi:application -w 4 -k uvicorn.workers.UvicornWorker</code>' }
+        ]
+      },
+      2: {
+        name: 'Linear-Style Issue Engine',
+        budget: '₹5,200',
+        file: 'issue_sync.py',
+        code: `# Linear WebSocket Sync Engine\nprint("Connecting WebSocket Relay to Redis Channels...")\n\ndef sync_issue(issue_id):\n    print(f"Broadcasting real-time diff for #{issue_id}")\n    return {'sync_latency': '0ms', 'status': 'PROPAGATED'}\n\nprint(sync_issue('AXIS-104'))`,
+        steps: [
+          { num: 'STEP 01', title: 'CHANNELS & ASGI STACK', desc: 'Install ASGI stack: <code>pip install django channels channels_redis djangorestframework</code>' },
+          { num: 'STEP 02', title: 'ASGI APPLICATION CONFIG', desc: 'In <code>asgi.py</code>, configure <code>ProtocolTypeRouter({"websocket": AuthMiddlewareStack(...)})</code>' },
+          { num: 'STEP 03', title: 'REDIS CHANNEL LAYER', desc: 'Set <code>CHANNEL_LAYERS</code> in <code>settings.py</code> using <code>channels_redis.core.RedisChannelLayer</code>' },
+          { num: 'STEP 04', title: 'ISSUE SCHEMA & INDICES', desc: 'Create <code>Issue</code> model with composite index on <code>(workspace_id, status, priority)</code> for millisecond sorting.' },
+          { num: 'STEP 05', title: 'WEBSOCKET CONSUMER', desc: 'Write <code>IssueConsumer(AsyncJsonWebsocketConsumer)</code> to broadcast local diffs to workspace room groups.' },
+          { num: 'STEP 06', title: 'DELTA COMPRESSION', desc: 'Implement JSON Patch (RFC 6902) to transmit only changed fields across active socket subscribers.' },
+          { num: 'STEP 07', title: 'KEYBOARD SHORTCUTS ENGINE', desc: 'Bind command palette keyboard listeners (Cmd+K, C for new, J/K for navigation) to optimistic UI store.' },
+          { num: 'STEP 08', title: 'DOCKER CLUSTER PROVISION', desc: 'Deploy Daphne/Uvicorn ASGI worker pods behind Nginx reverse proxy with WebSocket upgrade headers.' }
+        ]
+      },
+      3: {
+        name: 'Aether Brutal Store',
+        budget: '₹4,200',
+        file: 'cart_pipeline.py',
+        code: `# Aether Store Checkout Pipeline\nprint("Starting Aether Cart Pipeline...")\n\ndef reserve_stock(sku, qty):\n    print(f"Stock reserved for SKU: {sku} [Qty: {qty}]")\n    return True\n\nreserve_stock('CYBER-HOODIE-01', 2)\nprint("Order Dispatched: 200 OK")`,
+        steps: [
+          { num: 'STEP 01', title: 'COMMERCE ENGINE SETUP', desc: 'Install packages: <code>pip install django djangorestframework stripe strawberry-graphql</code>' },
+          { num: 'STEP 02', title: 'PRODUCT VARIANT ARCHITECTURE', desc: 'Define Product, Variant (SKU, Size, Color), and Inventory tracking models in PostgreSQL.' },
+          { num: 'STEP 03', title: 'ATOMIC INVENTORY RESERVATION', desc: 'Use <code>select_for_update()</code> database transactions to reserve items during the 10-minute checkout window.' },
+          { num: 'STEP 04', title: 'GRAPHQL SCHEMA EXPOSURE', desc: 'Build GraphQL query/mutation resolvers for cart operations, shipping calculations, and discounts.' },
+          { num: 'STEP 05', title: 'STRIPE WEBHOOK HANDLER', desc: 'Implement verified signature validation for <code>payment_intent.succeeded</code> in <code>api/webhooks.py</code>.' },
+          { num: 'STEP 06', title: 'MEDIA STORAGE ON S3/CLOUDFRONT', desc: 'Configure <code>django-storages</code> to serve high-res lookbook assets via edge CDN with WebP conversion.' },
+          { num: 'STEP 07', title: 'CART PERSISTENCE PIPELINE', desc: 'Sync anonymous guest carts to user profiles on authentication using Redis hash storage.' },
+          { num: 'STEP 08', title: 'PRODUCTION RELEASE', desc: 'Containerize with Docker, mount WhiteNoise for brutalist static fonts, and link PostgreSQL RDS instance.' }
+        ]
+      }
+    };
+
+    const defaultSteps = [
+      { num: 'STEP 01', title: 'VIRTUAL ENVIRONMENT SETUP', desc: 'Initialize isolated environment: <code>python -m venv env && source env/bin/activate</code>' },
+      { num: 'STEP 02', title: 'DEPENDENCY SPECIFICATION', desc: 'Install verified stack: <code>pip install django djangorestframework celery redis stripe</code>' },
+      { num: 'STEP 03', title: 'SETTINGS & APP CONFIG', desc: 'Configure database connection, installed apps, and REST framework limits in <code>settings.py</code>.' },
+      { num: 'STEP 04', title: 'RELATIONAL MODEL DESIGN', desc: 'Define primary data schemas with UUID primary keys and audit timestamps in <code>models.py</code>.' },
+      { num: 'STEP 05', title: 'SERIALIZER & VALIDATION', desc: 'Build DRF <code>ModelSerializer</code> with field-level sanitization against malicious payloads.' },
+      { num: 'STEP 06', title: 'CONTROLLER & BUSINESS LOGIC', desc: 'Implement class-based <code>APIView</code> handling payload processing and error responses.' },
+      { num: 'STEP 07', title: 'ASYNCHRONOUS TASK QUEUES', desc: 'Bind heavy workloads to background Celery workers connected via local Redis instances.' },
+      { num: 'STEP 08', title: 'PRODUCTION DEPLOYMENT', desc: 'Build Docker image, execute migrations: <code>python manage.py migrate</code>, and mount WSGI server.' }
+    ];
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const templateId = {{ template_id|default:1 }};
+    const mode = urlParams.get('mode') || localStorage.getItem('axis_role') || 'client';
+
+    const selectedTemplate = templateCatalog[templateId] || {
+      name: `Production Architecture #${templateId}`,
+      budget: '₹4,500',
+      file: 'system_node.py',
+      code: `# Production Template Node #${templateId}\nprint("Compiling Architecture #${templateId}...")\nprint("Backend operational: 200 OK")`,
+      steps: defaultSteps
+    };
+
+    const workspaceBody = document.getElementById('workspaceBody');
+    const clientView = document.getElementById('clientView');
+    const devView = document.getElementById('devView');
+    const roleBadge = document.getElementById('roleBadge');
+
+    if (mode === 'dev' || mode === 'developer') {
+      workspaceBody.classList.add('dev-mode');
+      devView.style.display = 'grid';
+      clientView.style.display = 'none';
+      roleBadge.innerText = `DEVELOPER STUDIO // ${selectedTemplate.name.toUpperCase()}`;
+      document.getElementById('editorFilename').innerText = `(02) ${selectedTemplate.file.toUpperCase()}`;
+      document.getElementById('sourceEditor').value = selectedTemplate.code;
+
+      const stepsBox = document.getElementById('stepsContainer');
+      let stepsHtml = `<div style="margin-bottom: 14px; color: var(--muted); font-size: 0.72rem;">SYSTEM: Complete 8-step production reproduction pipeline for ${selectedTemplate.name}.</div>`;
+      (selectedTemplate.steps || defaultSteps).forEach(s => {
+        stepsHtml += `
+          <div class="step-item">
+            <div class="step-num">${s.num} // ${s.title}</div>
+            <div class="step-text">${s.desc}</div>
+          </div>
+        `;
+      });
+      stepsBox.innerHTML = stepsHtml;
+
+    } else {
+      workspaceBody.classList.remove('dev-mode');
+      clientView.style.display = 'block';
+      devView.style.display = 'none';
+      roleBadge.innerText = `CLIENT HUB // ${selectedTemplate.name.toUpperCase()}`;
+      document.getElementById('clientTemplateTitle').innerText = `${selectedTemplate.name.toUpperCase()}`;
+      document.getElementById('specBudget').innerText = `${selectedTemplate.budget} INR`;
+    }
+
+    // --- Real Python Compiler & Telemetry Dispatch ---
+    async function compileDevCode() {
+      const code = document.getElementById('sourceEditor').value;
+      const out = document.getElementById('liveOutput');
+      const statusTag = document.getElementById('liveStatusTag');
+
+      statusTag.innerText = "STATUS: EXECUTING...";
+      statusTag.style.color = "#FF2E4C";
+      out.innerText = ">> COMPILING AST BYTECODE...\n>> DISPATCHING INSTRUCTION STREAM TO BACKEND...\n";
+
+      try {
+        const res = await fetch('/analyze-architecture/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: code, language: 'python' })
+        });
+
+        const d = await res.json();
+        statusTag.innerText = "STATUS: 200 OK";
+        statusTag.style.color = "#00FF66";
+
+        let log = `\n>>> [PROGRAM STDOUT OUTPUT]:\n`;
+        log += `--------------------------------------------------\n`;
+        log += `${d.stdout || 'Execution finished successfully.'}\n`;
+        log += `--------------------------------------------------\n`;
+        log += `>> ARCHITECTURE: ${d.architecture || 'Microservice Node'}\n`;
+
+        if (Array.isArray(d.execution_roadmap)) {
+          log += `>> ROADMAP STEPS:\n`;
+          d.execution_roadmap.forEach(step => {
+            log += `   ${step}\n`;
+          });
+        }
+
+        out.innerText = log;
+      } catch (err) {
+        statusTag.innerText = "STATUS: FAULT";
+        out.innerText = `\n! EXECUTION FAULT: ${err.message}`;
+      }
+    }
+
+    // --- Client Cloud Deployment Simulation ---
+    async function triggerClientDeployment() {
+      const logs = document.getElementById('clientDeployLogs');
+      const domain = document.getElementById('targetDomainInput').value.trim();
+      const provider = document.getElementById('cloudProvider').value;
+
+      logs.innerText = `[#] INITIATING PROVISIONING PIPELINE ON ${provider}...\n`;
+      const steps = [
+        `[#] ALLOCATING ISOLATED POD INSTANCE... [OK]`,
+        `[#] BINDING ZERO-TRUST SSL CERTIFICATES TO: ${domain}...`,
+        `[#] ATTACHING MANAGED POSTGRES & REDIS QUEUES...`,
+        `[#] INJECTING PRODUCTION ENVIRONMENT SECRETS...`,
+        `[>>>] ARCHITECTURE LIVE & OPERATIONAL ON: https://${domain}`
+      ];
+
+      for (let i = 0; i < steps.length; i++) {
+        await new Promise(r => setTimeout(r, 140));
+        logs.innerText += steps[i] + '\n';
+      }
+    }
+
+    // --- Real Stripe Hosted Checkout Dispatcher ---
+    const stripePublicKey = "{{ stripe_public_key|default:'pk_test_51MshH6SJuXwPfjjrrgxJ5tubbOgYAhRrqNcd4RDUSq1peWpIMZrjhIiTncSUWO9u6byeDf4KxdZPkFD4hU55mVOg00aRL5RT8x' }}";
+    const stripe = Stripe(stripePublicKey);
+
+    function triggerStripeCheckout() {
+      AudioEngine.playClick();
+      const modal = document.getElementById('checkoutLoaderModal');
+      if (modal) modal.style.display = 'flex';
+
+      const amountValue = selectedTemplate.budget.replace(/[^0-9]/g, '') || '4500';
+
+      fetch('/create-checkout-session/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          'post_data': amountValue,
+          'template_name': selectedTemplate.name
+        })
+      })
+      .then(res => res.json())
+      .then(session => {
+        if (session.error) {
+          if (modal) modal.style.display = 'none';
+          alert("Stripe Session Error: " + session.error);
+          return;
+        }
+        return stripe.redirectToCheckout({ sessionId: session.id });
+      })
+      .then(result => {
+        if (result && result.error) {
+          if (modal) modal.style.display = 'none';
+          alert(result.error.message);
+        }
+      })
+      .catch(err => {
+        if (modal) modal.style.display = 'none';
+        console.error('Stripe Checkout Error:', err);
+      });
+    }
+  </script>
+</body>
+</html>

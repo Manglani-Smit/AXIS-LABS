@@ -1,0 +1,266 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AXIS // ESCROW SETTLEMENT VERIFICATION</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #070709;
+      --card-bg: #0c0e14;
+      --fg: #ecebe8;
+      --muted: #64748b;
+      --accent: #e5b338; /* Gold */
+      --green: #10b981;
+      --accent-glow: rgba(229, 179, 56, 0.35);
+      --font-display: 'Syne', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background-color: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-display);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    .settlement-card {
+      width: 90%;
+      max-width: 720px;
+      background: var(--card-bg);
+      border: 2px solid var(--accent);
+      border-radius: 14px;
+      padding: 36px;
+      box-shadow: 0 0 50px var(--accent-glow);
+      text-align: center;
+      position: relative;
+    }
+
+    .sub-tag {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+    }
+
+    .hero-title {
+      font-size: 1.8rem;
+      font-weight: 900;
+      margin: 10px 0 6px;
+      text-transform: uppercase;
+    }
+
+    .stage-container {
+      height: 250px;
+      margin: 22px 0;
+      background: #030406;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Coat Agent */
+    #agentFigure {
+      position: absolute;
+      left: 100px;
+      bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 10;
+      transform: translateX(-240px); /* Pehle Bank ke andar chupa hoga */
+    }
+
+    #briefcaseContainer {
+      background: #141722;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-top: -10px;
+      box-shadow: 0 0 16px rgba(229, 179, 56, 0.3);
+    }
+
+    .btn-return {
+      display: inline-block;
+      margin-top: 18px;
+      background: var(--accent);
+      color: #000;
+      text-decoration: none;
+      padding: 12px 28px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .btn-return:hover {
+      box-shadow: 0 0 16px var(--accent-glow);
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="settlement-card">
+    <div class="sub-tag">[ STRIPE SETTLEMENT DETECTED // TIER-4 ESCROW RELAY ]</div>
+    <h1 class="hero-title" id="statusHeader">ESCROW CLEARANCE IN PROGRESS...</h1>
+    <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted);" id="statusSubText">
+      Verifying transaction payload from Stripe Network. Dispatching physical vault custody agent.
+    </p>
+
+    <!-- Interactive Cutscene Stage -->
+    <div class="stage-container">
+
+      <!-- Central Bank Building -->
+      <svg id="bankSvg" viewBox="0 0 120 120" width="140" height="140" style="position: absolute; left: 20px; bottom: 20px; z-index: 5;">
+        <rect x="15" y="45" width="90" height="65" fill="#11141c" stroke="#475569" stroke-width="2"/>
+        <polygon points="15,45 60,15 105,45" fill="#1e2433" stroke="var(--accent)" stroke-width="2"/>
+        <rect x="25" y="55" width="10" height="55" fill="#334155"/>
+        <rect x="55" y="55" width="10" height="55" fill="#334155"/>
+        <rect x="85" y="55" width="10" height="55" fill="#334155"/>
+        <rect x="50" y="75" width="20" height="35" fill="#05070a" stroke="#475569"/>
+        <text x="60" y="38" font-size="8" fill="var(--accent)" text-anchor="middle" font-family="monospace" font-weight="bold">RESERVE</text>
+      </svg>
+
+      <!-- Trench Coat Agent with Briefcase -->
+      <div id="agentFigure">
+        <svg viewBox="0 0 100 140" width="85" height="125">
+          <circle cx="50" cy="24" r="14" fill="#e2e8f0"/>
+          <rect x="40" y="21" width="20" height="5" rx="2" fill="#000"/>
+          <polygon points="30,40 70,40 82,115 18,115" fill="#0d0f16" stroke="#334155" stroke-width="2"/>
+          <polygon points="45,40 55,40 52,70 48,70" fill="var(--accent)"/>
+          <rect x="33" y="115" width="11" height="22" fill="#07080b"/>
+          <rect x="56" y="115" width="11" height="22" fill="#07080b"/>
+        </svg>
+
+        <div id="briefcaseContainer">
+          [ CONTAINER SEALED ]
+        </div>
+      </div>
+
+      <!-- Money Particle -->
+      <div id="cashParticle" style="display: none; position: absolute; right: 180px; bottom: 120px; background: var(--green); color: #000; font-family: var(--font-mono); font-size: 0.8rem; font-weight: bold; padding: 6px 14px; border-radius: 4px; box-shadow: 0 0 16px var(--green); z-index: 25;">
+        💵 ₹{{ amount|default:'4500' }} INR
+      </div>
+    </div>
+
+    <!-- Live Telemetry Status Bar -->
+    <div id="telemetryStatus" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--green); min-height: 26px;">
+      >> BUFFERING: INITIALIZING ATOMIC HANDSHAKE...
+    </div>
+
+    <!-- Action Back Button -->
+    <a href="/dashboard/client/" class="btn-return" id="returnDashboardBtn" style="display: none;">
+      RETURN TO CLIENT DASHBOARD
+    </a>
+  </div>
+
+  <script>
+    // Audio synthesizer for mechanical feedback
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AudioCtx();
+    function playBeep(freq = 600, duration = 0.08) {
+      try {
+        if (ctx.state === 'suspended') ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    async function runBankAnimation() {
+      const agent = document.getElementById('agentFigure');
+      const box = document.getElementById('briefcaseContainer');
+      const cash = document.getElementById('cashParticle');
+      const title = document.getElementById('statusHeader');
+      const sub = document.getElementById('statusSubText');
+      const telemetry = document.getElementById('telemetryStatus');
+      const returnBtn = document.getElementById('returnDashboardBtn');
+
+      // Step 1: Bank opens, Agent walks out
+      playBeep(450, 0.15);
+      telemetry.innerText = ">> AGENT EXITING CENTRAL BANK WITH SECURE ESCROW BRIEFCASE...";
+      await new Promise(r => setTimeout(r, 600));
+
+      if (window.gsap) {
+        gsap.to(agent, { x: 260, duration: 1.8, ease: "power2.out" });
+      } else {
+        agent.style.transform = "translateX(260px)";
+      }
+      await new Promise(r => setTimeout(r, 1900));
+
+      // Step 2: Agent Opens Box & Money Enters
+      playBeep(850, 0.1);
+      box.innerText = "[ OPENING ESCROW CONTAINER ]";
+      box.style.borderColor = "#10b981";
+      box.style.color = "#10b981";
+      telemetry.innerText = ">> CLIENT FUNDS DETECTED: DEPOSITING ₹{{ amount|default:'4500' }} INR INTO VAULT BOX...";
+
+      cash.style.display = "block";
+      if (window.gsap) {
+        gsap.fromTo(cash, { y: -40, opacity: 0 }, { y: 20, opacity: 1, duration: 0.8 });
+      }
+      await new Promise(r => setTimeout(r, 900));
+
+      cash.style.display = "none";
+      box.innerText = "[ ESCROW SECURED // CONTAINER LOCKED ]";
+      playBeep(920, 0.08);
+
+      // Step 3: Agent Walks Back to the Bank
+      title.innerText = "RETURNING FUNDS TO CENTRAL VAULT...";
+      sub.innerText = "The officer is escorting the deposit back into the bank reserve for treasury verification.";
+      telemetry.innerText = ">> AGENT ENTERING BANK VAULT...";
+
+      if (window.gsap) {
+        gsap.to(agent, { x: -40, duration: 2.0, ease: "power2.in" });
+      } else {
+        agent.style.transform = "translateX(-40px)";
+      }
+      await new Promise(r => setTimeout(r, 2100));
+
+      // Step 4: Bank Door Closes + Buffering Ledger Audit
+      title.innerText = "VERIFYING SETTLEMENT...";
+      sub.innerText = "Deposit received inside bank. Auditing transaction hash across central escrow ledger.";
+      telemetry.innerHTML = `<span style="color:var(--accent);">>> [BUFFERING SETTLEMENT] SYNCHRONIZING WITH CENTRAL TREASURY...</span>`;
+      playBeep(320, 0.2);
+      await new Promise(r => setTimeout(r, 1800));
+
+      // Step 5: Final Settlement Confirmation & Success
+      title.innerText = "PAYMENT RECEIVED BY OUR ACCOUNT // 200 OK";
+      title.style.color = "#10b981";
+      sub.innerText = "Order #AX-{{ order_id }} settled. Official Tax Invoice has been generated and dispatched to {{ user_email }}.";
+      telemetry.innerHTML = `<strong style="color:#10b981;">[TRANSACTION CLEARED] FULL PERPETUAL BLUEPRINTS PROVISIONED.</strong>`;
+      returnBtn.style.display = "inline-block";
+      playBeep(1200, 0.25);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      runBankAnimation();
+    });
+  </script>
+</body>
+</html>

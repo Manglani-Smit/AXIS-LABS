@@ -1,0 +1,33 @@
+# Environment secrets (Stripe, OpenRouter, Email credentials)
+.env
+.env.*
+
+# Python Virtual Environment
+env/
+venv/
+ENV/
+.venv/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Django Local Database
+*.sqlite3
+db.sqlite3
+
+# Django Media & Static collected files
+/media/
+/staticfiles/
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db

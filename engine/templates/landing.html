@@ -1,0 +1,514 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AXIS LABS // WEB ARCHITECTURE MARKETPLACE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #070709;
+      --card-bg: #0E1015;
+      --fg: #ECEBE8;
+      --muted: #64748B;
+      --line: rgba(255, 255, 255, 0.08);
+
+      --active-accent: #E5B338;
+      --active-glow: rgba(229, 179, 56, 0.35);
+      --font-display: 'Syne', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+    body.dev-theme {
+      --active-accent: #FF2E4C;
+      --active-glow: rgba(255, 46, 76, 0.4);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; cursor: crosshair; }
+    body { background-color: var(--bg); color: var(--fg); font-family: var(--font-display); min-height: 100vh; overflow-x: hidden; }
+
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(7, 7, 9, 0.94);
+      backdrop-filter: blur(14px);
+      padding: 18px 48px;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand-logo { font-size: 1.25rem; font-weight: 900; letter-spacing: -0.04em; }
+    .brand-logo span.tag {
+      font-family: var(--font-mono); font-size: 0.65rem; padding: 3px 8px;
+      border: 1px solid var(--active-accent); color: var(--active-accent); border-radius: 4px;
+    }
+
+    .taskbar-switch {
+      display: flex; background: #12141A; border: 1px solid var(--line); border-radius: 30px; padding: 4px; gap: 6px;
+    }
+    .task-btn {
+      background: transparent; border: none; padding: 8px 20px; font-family: var(--font-mono);
+      font-size: 0.72rem; font-weight: 700; border-radius: 20px; color: var(--muted); cursor: pointer;
+      transition: all 0.25s ease; display: flex; align-items: center; gap: 8px;
+    }
+    .task-btn.active-client { background: #E5B338; color: #000; box-shadow: 0 0 15px rgba(229, 179, 56, 0.4); }
+    .task-btn.active-dev { background: #FF2E4C; color: #FFF; box-shadow: 0 0 15px rgba(255, 46, 76, 0.4); }
+
+    .btn-login {
+      background: transparent; border: 1px solid var(--active-accent); color: var(--active-accent);
+      font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; padding: 8px 18px; border-radius: 4px; cursor: pointer;
+    }
+    .btn-login:hover { background: var(--active-accent); color: #000; }
+
+    .hero { padding: 48px 48px 24px; display: flex; flex-direction: column; gap: 10px; }
+    .hero-pre { font-family: var(--font-mono); font-size: 0.75rem; color: var(--active-accent); letter-spacing: 0.2em; }
+    .hero-title { font-size: clamp(2.5rem, 5.5vw, 5.5rem); font-weight: 900; text-transform: uppercase; line-height: 0.95; }
+
+    .showcase-container { padding: 20px 48px 100px; }
+    .filter-bar {
+      display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono);
+      font-size: 0.75rem; border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 30px; color: var(--muted);
+    }
+    .template-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 32px;
+    }
+
+    .card-anchor { position: relative; height: 500px; perspective: 1000px; }
+    .template-card {
+      position: absolute; inset: 0; background: var(--card-bg); border: 1px solid var(--line);
+      border-radius: 8px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;
+      z-index: 2; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s;
+    }
+    .template-card:hover {
+      transform: translateY(-6px); border-color: var(--active-accent);
+      box-shadow: 0 16px 30px rgba(0, 0, 0, 0.8), 0 0 20px var(--active-glow);
+    }
+
+    .mock-browser {
+      height: 230px; background: #030406; border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .browser-bar {
+      background: #111318; padding: 7px 12px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-family: var(--font-mono); font-size: 0.6rem;
+    }
+    .browser-dots { display: flex; gap: 5px; }
+    .b-dot { width: 7px; height: 7px; border-radius: 50%; background: #334155; }
+    .browser-slug { color: var(--active-accent); background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 3px; }
+
+    .web-preview-canvas {
+      flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: space-between;
+      font-family: var(--font-mono); font-size: 0.65rem; color: #fff; position: relative;
+    }
+    .web-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px; }
+    .web-nav-links { display: flex; gap: 8px; color: var(--muted); font-size: 0.55rem; }
+    .web-hero { margin: 8px 0; }
+    .web-hero h5 { font-size: 0.95rem; font-weight: 900; line-height: 1.1; margin-bottom: 4px; text-transform: uppercase; }
+    .web-hero p { color: var(--muted); font-size: 0.58rem; line-height: 1.3; }
+
+    .web-widgets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+    .web-widget-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 6px; border-radius: 4px; }
+    .widget-val { font-size: 0.75rem; font-weight: 700; color: var(--active-accent); }
+
+    .card-meta { margin-top: 12px; font-family: var(--font-mono); }
+    .card-meta h4 { font-size: 1.1rem; font-family: var(--font-display); font-weight: 800; }
+    .card-meta .specs { font-size: 0.72rem; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+    .card-meta .price-tag { font-size: 0.85rem; color: var(--active-accent); font-weight: 700; margin-top: 6px; }
+
+    .card-btn {
+      width: 100%; background: #161822; border: 1px solid var(--line); color: var(--fg);
+      padding: 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700;
+      letter-spacing: 0.1em; cursor: pointer; text-transform: uppercase; transition: all 0.25s ease; margin-top: 14px;
+    }
+    .card-btn:hover { background: var(--active-accent); color: #000; border-color: var(--active-accent); box-shadow: 0 0 14px var(--active-glow); }
+
+    .mascot-peep {
+      position: absolute; top: -65px; right: 20px; width: 90px; height: 90px; z-index: 1;
+      transform: translateY(70px) scale(0.5); opacity: 0; pointer-events: none;
+      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
+    }
+    .card-anchor.alert-active .mascot-peep { transform: translateY(0) scale(1); opacity: 1; pointer-events: all; }
+    .speech-bubble {
+      position: absolute; top: -30px; left: -110px; background: var(--active-accent); color: #000;
+      font-family: var(--font-mono); font-weight: 700; font-size: 0.65rem; padding: 4px 8px; border-radius: 4px;
+    }
+
+    #mascotAlertModal {
+      position: fixed; inset: 0; background: rgba(4, 4, 5, 0.94); backdrop-filter: blur(12px);
+      z-index: 9999; display: none; align-items: center; justify-content: center;
+    }
+    .mascot-modal-box {
+      width: 90%; max-width: 440px; background: #0c0d12; border: 1px solid var(--active-accent);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.9), 0 0 30px var(--active-glow); padding: 32px; border-radius: 8px; text-align: center;
+    }
+    .btn-login-modal {
+      width: 100%; background: var(--active-accent); color: #000; border: none; padding: 12px;
+      font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.15em; border-radius: 4px; cursor: pointer; margin-top: 18px;
+    }
+  </style>
+</head>
+<body class="client-theme">
+
+  {% include 'portal_transition.html' %}
+
+  <header>
+    <div class="brand-logo">
+      AXIS LABS // <span class="tag" id="themeBadge">MARKETPLACE</span>
+    </div>
+
+    <div class="taskbar-switch">
+      <button type="button" class="task-btn active-client" id="taskClientBtn" onclick="switchTheme('client')">
+        <span>$</span> CLIENT VIEW
+      </button>
+      <button type="button" class="task-btn" id="taskDevBtn" onclick="switchTheme('dev')">
+        <span>//</span> DEVELOPER VIEW
+      </button>
+    </div>
+
+    <div>
+      <button type="button" class="btn-login" onclick="goToAuth()">
+        [ SECURITY TERMINAL ]
+      </button>
+    </div>
+  </header>
+
+  <main class="hero">
+    <div class="hero-pre" id="heroSubTag">[ 50+ RESEARCHED PRODUCTION WEB ARCHITECTURES // LIVE REPOSITORIES ]</div>
+    <h1 class="hero-title">
+      ENTERPRISE<br>
+      SYSTEMS.<br>
+      NOT TEMPLATES.
+    </h1>
+  </main>
+
+  <section class="showcase-container">
+    <div class="filter-bar">
+      <div>VERIFIED ECOSYSTEMS: <span style="color:var(--active-accent); font-weight:700;" id="totalCounter">50 ARCHITECTURES</span></div>
+      <div>LICENSE: <span style="color:var(--active-accent);">FULL COMMERCIAL SOURCE & DEPLOY READY</span></div>
+    </div>
+
+    <div class="template-grid" id="templateGrid"></div>
+  </section>
+
+  <!-- Mascot Gatekeeper Modal -->
+  <div id="mascotAlertModal">
+    <div class="mascot-modal-box">
+      <svg viewBox="0 0 100 100" width="80" height="80" style="margin: 0 auto 12px;">
+        <circle cx="50" cy="50" r="42" fill="#14161C" stroke="var(--active-accent)" stroke-width="4"/>
+        <circle cx="36" cy="42" r="12" fill="#ECEBE8"/>
+        <circle cx="38" cy="42" r="6" fill="#000"/>
+        <circle cx="64" cy="42" r="12" fill="#ECEBE8"/>
+        <circle cx="62" cy="42" r="6" fill="#000"/>
+        <path d="M38,64 Q50,78 64,64" stroke="var(--active-accent)" stroke-width="4" stroke-linecap="round"/>
+        <line x1="26" y1="18" x2="34" y2="28" stroke="var(--active-accent)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="74" y1="18" x2="66" y2="28" stroke="var(--active-accent)" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+
+      <div style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--active-accent); letter-spacing: 0.2em;">
+        [ RESTRICTED ACCESS ]
+      </div>
+      <h3 style="font-size: 1.3rem; font-weight: 900; margin: 8px 0 6px;">
+        AHH-HA! LOGIN REQUIRED!
+      </h3>
+      <p style="font-family: var(--font-mono); font-size: 0.75rem; color: #888; line-height: 1.6;">
+        You must authenticate through the Zero-Trust security terminal before viewing workspace code, running compilers, or deploying architectures.
+      </p>
+
+      <button type="button" class="btn-login-modal" onclick="goToAuth()">
+        AUTHORIZE CREDENTIALS NOW
+      </button>
+      <button type="button" style="width:100%; background:transparent; border:none; color:var(--muted); font-family:var(--font-mono); font-size:0.7rem; margin-top:10px; cursor:pointer;" onclick="closeMascotModal()">
+        [ DISMISS ]
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // --- Cherry-MX & Mechanical Audio Engine ---
+    const AudioEngine = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      },
+      playClick() {
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const osc1 = this.ctx.createOscillator();
+          const gain1 = this.ctx.createGain();
+          osc1.type = 'triangle';
+          osc1.frequency.setValueAtTime(1600, t);
+          osc1.frequency.exponentialRampToValueAtTime(320, t + 0.05);
+          gain1.gain.setValueAtTime(0.85, t);
+          gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+          osc1.connect(gain1);
+          gain1.connect(this.ctx.destination);
+          osc1.start(t);
+          osc1.stop(t + 0.05);
+
+          const osc2 = this.ctx.createOscillator();
+          const gain2 = this.ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(180, t);
+          osc2.frequency.exponentialRampToValueAtTime(40, t + 0.07);
+          gain2.gain.setValueAtTime(0.75, t);
+          gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+          osc2.connect(gain2);
+          gain2.connect(this.ctx.destination);
+          osc2.start(t);
+          osc2.stop(t + 0.07);
+        } catch (e) {}
+      },
+      playPeepSqueak() {
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(380, t);
+          osc.frequency.exponentialRampToValueAtTime(1200, t + 0.2);
+          gain.gain.setValueAtTime(0.75, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.22);
+        } catch (e) {}
+      }
+    };
+
+    window.addEventListener('keydown', () => AudioEngine.playClick());
+    document.addEventListener('click', (e) => {
+      AudioEngine.init();
+      if (e.target.closest('button, .card-btn, .task-btn, input')) AudioEngine.playClick();
+    });
+
+    const realWebArchitectures = [
+      {
+        name: "Stripe-Grade PayCore", domain: "core.payengine.io", type: "FINTECH GATEWAY",
+        tagline: "Atomic multi-currency payments with automated reconciliation.",
+        stat1: "99.999% SLA", stat2: "14ms Latency", budget: "$4,800",
+        stack: "Django REST, Redis, PostgreSQL, Celery",
+        heroText: "GLOBAL PAYMENTS INFRASTRUCTURE", subText: "Process millions in transactions with sub-second finality."
+      },
+      {
+        name: "Linear-Style Issue Engine", domain: "app.linear-flow.dev", type: "PROJECT OS",
+        tagline: "Ultra-fast keyboard-first issue tracker with real-time WebSockets.",
+        stat1: "Sync: 0ms", stat2: "Offline-First", budget: "$5,200",
+        stack: "Django Channels, WebSockets, Redis, React",
+        heroText: "HIGH VELOCITY WORKFLOW ENGINE", subText: "Engineered for engineering teams who value millisecond latency."
+      },
+      {
+        name: "Vercel-Inspired Cloud Edge", domain: "edge.vercel-node.cloud", type: "DEVOPS CLOUD",
+        tagline: "Autonomous Git deployment runner with isolated container pods.",
+        stat1: "Cold Start: 8ms", stat2: "Isolated Pods", budget: "$6,500",
+        stack: "Docker Swarm, Kubernetes API, Django, MinIO",
+        heroText: "ZERO-CONFIG EDGE COMPUTING", subText: "Push to deploy. Automated rollback and live cluster telemetry."
+      },
+      {
+        name: "Perplexity-Tier Search Node", domain: "query.mindmesh.ai", type: "AI SEARCH CORE",
+        tagline: "Semantic search engine with vector embeddings and citations.",
+        stat1: "Vector: Qdrant", stat2: "1,200 Tokens/s", budget: "$7,200",
+        stack: "FastAPI, LangChain, PyTorch, Django REST",
+        heroText: "CONVERSATIONAL NEURAL RETRIEVAL", subText: "Ask anything. Real-time internet search with verifiable citations."
+      },
+      {
+        name: "Supabase-Class Cloud DB", domain: "db.hyperbase.sh", type: "DATABASE PLATFORM",
+        tagline: "PostgreSQL console with instant auto-generated REST APIs.",
+        stat1: "RLS Policies", stat2: "Instant REST", budget: "$5,900",
+        stack: "PostgreSQL 16, Django, Go Proxy, Docker",
+        heroText: "OPEN SOURCE BACKEND ENGINE", subText: "Database, authentication, storage, and auto-generated APIs."
+      },
+      {
+        name: "Aether Brutalist Storefront", domain: "shop.aether-brutal.com", type: "HIGH-END ECOMMERCE",
+        tagline: "Ultra-luxury fashion & streetwear commerce with 3D models.",
+        stat1: "GMV: $2.4M", stat2: "Shopify Sync", budget: "$4,200",
+        stack: "Django, GraphQL, Next.js, Stripe",
+        heroText: "AVANT-GARDE CYBER APPAREL", subText: "Architectural apparel designed for high-density physical environments."
+      },
+      {
+        name: "Midjourney Neural Canvas", domain: "studio.neuralgen.art", type: "GENERATIVE AI SUITE",
+        tagline: "Distributed image generation studio with GPU job scheduling.",
+        stat1: "A100 Cluster", stat2: "Queue: 40ms", budget: "$8,400",
+        stack: "PyTorch, CUDA, Celery, Redis, Django",
+        heroText: "GENERATIVE LATENT DIFFUSION", subText: "Generate photorealistic assets from architectural blueprints."
+      },
+      {
+        name: "ZeroTrust Vault Terminal", domain: "vault.zerotrust-sec.io", type: "CYBER SECURITY",
+        tagline: "Hardware-backed secret management with email 2FA authorization.",
+        stat1: "AES-256-GCM", stat2: "Zero-Knowledge", budget: "$5,500",
+        stack: "Go, Django, WebSockets, Argon2",
+        heroText: "CRYPTOGRAPHIC IDENTITY VAULT", subText: "Out-of-band email authorization with self-destructing tokens."
+      }
+    ];
+
+    let currentMode = 'client';
+
+    function switchTheme(mode) {
+      currentMode = mode;
+      const clientBtn = document.getElementById('taskClientBtn');
+      const devBtn = document.getElementById('taskDevBtn');
+      const badge = document.getElementById('themeBadge');
+      const subTag = document.getElementById('heroSubTag');
+
+      if (mode === 'dev') {
+        document.body.classList.add('dev-theme');
+        clientBtn.className = 'task-btn';
+        devBtn.className = 'task-btn active-dev';
+        badge.innerText = 'DEVELOPER BLUEPRINTS';
+        subTag.innerText = '[ 50+ RAW SOURCE ARCHITECTURES // BYTECODE & CODE EDITORS ]';
+      } else {
+        document.body.classList.remove('dev-theme');
+        clientBtn.className = 'task-btn active-client';
+        devBtn.className = 'task-btn';
+        badge.innerText = 'CLIENT MARKETPLACE';
+        subTag.innerText = '[ 50+ PRODUCTION ECOSYSTEMS // INSTANT ACQUISITION & DEPLOY ]';
+      }
+
+      document.querySelectorAll('.card-btn').forEach(btn => {
+        btn.innerText = (mode === 'dev') ? 'MAKE IT LIKE THIS' : 'USE THIS TEMPLATE';
+      });
+    }
+
+    function renderTemplates() {
+      const grid = document.getElementById('templateGrid');
+      if (!grid) return;
+      let html = '';
+      const total = 50;
+
+      for (let i = 1; i <= total; i++) {
+        const item = realWebArchitectures[(i - 1) % realWebArchitectures.length];
+        const btnText = (currentMode === 'dev') ? 'MAKE IT LIKE THIS' : 'USE THIS TEMPLATE';
+
+        html += `
+          <div class="card-anchor" id="cardAnchor_${i}">
+            <div class="mascot-peep">
+              <div class="speech-bubble">AHH-HA! LOGIN!</div>
+              <svg viewBox="0 0 100 100" width="80" height="80">
+                <circle cx="50" cy="50" r="40" fill="#14161C" stroke="var(--active-accent)" stroke-width="4"/>
+                <circle cx="36" cy="44" r="10" fill="#FFF"/>
+                <circle cx="38" cy="44" r="5" fill="#000"/>
+                <circle cx="64" cy="44" r="10" fill="#FFF"/>
+                <circle cx="62" cy="44" r="5" fill="#000"/>
+                <path d="M38,64 Q50,76 64,64" stroke="var(--active-accent)" stroke-width="4" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+            <div class="template-card" onclick="handleCardClick(event, ${i})">
+              <div class="mock-browser">
+                <div class="browser-bar">
+                  <div class="browser-dots">
+                    <div class="b-dot" style="background:#ef4444;"></div>
+                    <div class="b-dot" style="background:#eab308;"></div>
+                    <div class="b-dot" style="background:#22c55e;"></div>
+                  </div>
+                  <div class="browser-slug">https://${item.domain}</div>
+                </div>
+
+                <div class="web-preview-canvas">
+                  <div class="web-header">
+                    <span style="font-weight:800; color:var(--active-accent);">${item.name}</span>
+                    <div class="web-nav-links">
+                      <span>DOCS</span>
+                      <span>API</span>
+                      <span>CONSOLE</span>
+                    </div>
+                  </div>
+
+                  <div class="web-hero">
+                    <h5>${item.heroText}</h5>
+                    <p>${item.subText}</p>
+                  </div>
+
+                  <div class="web-widgets">
+                    <div class="web-widget-box">
+                      <span style="font-size:0.55rem; color:var(--muted);">TELEMETRY 1</span>
+                      <div class="widget-val">${item.stat1}</div>
+                    </div>
+                    <div class="web-widget-box">
+                      <span style="font-size:0.55rem; color:var(--muted);">TELEMETRY 2</span>
+                      <div class="widget-val">${item.stat2}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card-meta">
+                <h4>${item.name} // REV_${String(i).padStart(2, '0')}</h4>
+                <div class="specs">
+                  <strong>Stack:</strong> ${item.stack}<br>
+                  <strong>Capability:</strong> ${item.tagline}
+                </div>
+                <div class="price-tag">VALUATION: ${item.budget} USD</div>
+              </div>
+
+              <button type="button" class="card-btn" onclick="handleCardClick(event, ${i})">
+                ${btnText}
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      grid.innerHTML = html;
+    }
+
+    // --- GATEKEEPER CHECK: Login Verification Before Any Action ---
+    function handleCardClick(e, id) {
+      e.stopPropagation();
+      const token = localStorage.getItem('axis_token');
+
+      // Agar logged in nahi hai, toh mascot pop-up trigger karo
+      if (!token || token === 'null' || token === 'undefined') {
+        triggerMascot(id);
+      } else {
+        openTemplateWorkspace(id);
+      }
+    }
+
+    function triggerMascot(id) {
+      AudioEngine.playPeepSqueak();
+      const anchor = document.getElementById(`cardAnchor_${id}`);
+      if (anchor) anchor.classList.add('alert-active');
+
+      setTimeout(() => {
+        document.getElementById('mascotAlertModal').style.display = 'flex';
+      }, 400);
+    }
+
+    function closeMascotModal() {
+      document.getElementById('mascotAlertModal').style.display = 'none';
+      document.querySelectorAll('.card-anchor').forEach(el => el.classList.remove('alert-active'));
+    }
+
+    function openTemplateWorkspace(id) {
+      if (typeof navigateThroughPortal === "function") {
+        navigateThroughPortal('CATALOGUE', `SPEC #${id}`, `/template/${id}/?mode=${currentMode}`);
+      } else {
+        window.location.href = `/template/${id}/?mode=${currentMode}`;
+      }
+    }
+
+    function goToAuth() {
+      closeMascotModal();
+      if (typeof navigateThroughPortal === "function") {
+        navigateThroughPortal('CATALOGUE', 'SECURITY CONSOLE', '/auth/');
+      } else {
+        window.location.href = '/auth/';
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderTemplates();
+      switchTheme('client');
+    });
+  </script>
+</body>
+</html>

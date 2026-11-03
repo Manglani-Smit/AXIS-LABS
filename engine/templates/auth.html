@@ -1,0 +1,543 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AXIS CORE // ZERO-TRUST CONSOLE</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(16, 23, 42, 0.9);
+            --border-glow: #1e293b;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-amber: #E5B338;
+            --text-main: #f8fafc;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image:
+                radial-gradient(ellipse at 50% 0%, rgba(6, 182, 212, 0.12) 0%, transparent 60%),
+                radial-gradient(circle at 100% 100%, rgba(229, 179, 56, 0.08) 0%, transparent 50%);
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 480px;
+            padding: 36px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            position: relative;
+        }
+
+        .sys-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+
+        .sys-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--accent-cyan);
+        }
+
+        .sys-badge {
+            font-size: 0.65rem;
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid var(--accent-cyan);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .role-switch {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: #0f172a;
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid #1e293b;
+            margin-bottom: 20px;
+        }
+
+        .role-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .role-btn.active-dev {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 2px 10px rgba(6, 182, 212, 0.3);
+        }
+
+        .role-btn.active-client {
+            background: var(--accent-amber);
+            color: #000;
+            box-shadow: 0 2px 10px rgba(229, 179, 56, 0.3);
+        }
+
+        .input-group { margin-bottom: 16px; }
+        .input-label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .input-box {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 12px 14px;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .input-box:focus { border-color: var(--accent-cyan); }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--accent-cyan);
+            color: #020617;
+            border: none;
+            padding: 14px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+
+        .toggle-link {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 18px;
+            cursor: pointer;
+        }
+        .toggle-link span { color: var(--accent-cyan); text-decoration: underline; }
+
+        .toast-msg {
+            font-size: 0.75rem;
+            margin-top: 12px;
+            text-align: center;
+            min-height: 18px;
+            color: var(--accent-red);
+        }
+
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(11, 15, 25, 0.98);
+            border-radius: 12px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 28px;
+            text-align: center;
+            z-index: 50;
+        }
+
+        .spinner {
+            width: 46px;
+            height: 46px;
+            border: 3px solid rgba(6, 182, 212, 0.15);
+            border-top: 3px solid var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .cipher-box {
+            background: #020617;
+            padding: 16px;
+            border-radius: 6px;
+            border: 1px dashed var(--accent-green);
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--accent-green);
+            word-break: break-all;
+            width: 100%;
+            margin: 14px 0;
+            user-select: all;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+        }
+
+        .btn-copy {
+            background: #1e293b;
+            color: #fff;
+            border: 1px solid #334155;
+            padding: 9px 18px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-copy:hover {
+            background: #334155;
+            border-color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+{% include 'portal_transition.html' %}
+
+<div class="auth-container">
+    <div class="sys-header">
+        <div class="sys-title" id="titleText">AXIS // AUTH</div>
+        <div class="sys-badge" id="badgeText">ZERO-TRUST TIER-3</div>
+    </div>
+
+    <div class="role-switch">
+        <button type="button" class="role-btn active-dev" id="btn-dev" onclick="setRole('developer')">DEVELOPER</button>
+        <button type="button" class="role-btn" id="btn-client" onclick="setRole('client')">CLIENT / B2B</button>
+    </div>
+
+    <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+        {% csrf_token %}
+        <div class="input-group">
+            <label class="input-label" id="user-label" for="username">Operator Identifier</label>
+            <input type="text" id="username" class="input-box" placeholder="e.g. Smit" required autocomplete="off">
+        </div>
+
+        <div class="input-group" id="email-group" style="display: none;">
+            <label class="input-label" for="email">Contact Relay (Email)</label>
+            <input type="email" id="email" class="input-box" placeholder="e.g. smit@axis.io">
+        </div>
+
+        <div class="input-group">
+            <label class="input-label" for="password">Passphrase</label>
+            <input type="password" id="password" class="input-box" placeholder="••••••••••••" required>
+        </div>
+
+        <div class="input-group" id="key-group">
+            <label class="input-label" id="key-label" for="key">Developer Secret Token</label>
+            <input type="text" id="key" class="input-box" placeholder="DEV-XXXXXXXXXXXXXXXX" autocomplete="off">
+        </div>
+
+        <button type="submit" class="btn-submit" id="btn-submit">Dispatch Clearance</button>
+        <div class="toast-msg" id="error-toast"></div>
+    </form>
+
+    <div class="toggle-link" id="toggle-auth" onclick="toggleAuthMode()">
+        No clearance profile? <span>Initialize registration</span>
+    </div>
+
+    <!-- 2FA Handshake Modal -->
+    <div class="modal-overlay" id="handshake-modal">
+        <div class="spinner"></div>
+        <div style="font-size: 0.75rem; color: #f59e0b; font-weight: 700; margin-bottom: 8px;">PENDING HANDSHAKE</div>
+        <h3 style="font-size: 1rem; margin-bottom: 8px;">Relay Dispatched</h3>
+        <p style="font-size: 0.75rem; color: #94a3b8; line-height: 1.5;">
+            2FA authorization signal sent to registered email.<br>Please authorize from your mail client.
+        </p>
+    </div>
+
+    <!-- Registration Success Cipher Modal -->
+    <div class="modal-overlay" id="register-success-modal">
+        <div style="font-size: 0.7rem; color: var(--accent-green); font-weight: 700;">REGISTRATION CONFIRMED</div>
+        <h3 style="font-size: 1rem; margin-top: 4px;" id="reg-cipher-title">ISSUED HARDWARE CIPHER</h3>
+
+        <p style="font-size: 0.72rem; color: #ef4444; margin-top: 10px; font-weight: 700; line-height: 1.4;">
+            ⚠️ ATTENTION: COPY OR SAVE THIS KEY SECURELY.<br>
+            THIS KEY IS REQUIRED FOR EVERY CONSOLE ACCESS.
+        </p>
+
+        <div class="cipher-box" id="reg-cipher-box"></div>
+
+        <div style="display: flex; gap: 8px; width: 100%; justify-content: center;">
+            <button type="button" class="btn-copy" id="btn-copy-cipher" onclick="copyCipher()">COPY CIPHER</button>
+            <button type="button" class="btn-submit" style="margin-top: 0; padding: 10px 18px; width: auto;" onclick="proceedToLogin()">PROCEED & AUTO-FILL</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function getCsrfToken() {
+        return getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    }
+
+    const AudioEngine = {
+        ctx: null,
+        init() {
+            if (!this.ctx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioCtx();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        },
+        playClick() {
+            try {
+                this.init();
+                const t = this.ctx.currentTime;
+                const osc1 = this.ctx.createOscillator();
+                const gain1 = this.ctx.createGain();
+                osc1.type = 'triangle';
+                osc1.frequency.setValueAtTime(1600, t);
+                osc1.frequency.exponentialRampToValueAtTime(320, t + 0.05);
+
+                gain1.gain.setValueAtTime(0.85, t);
+                gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+
+                osc1.connect(gain1);
+                gain1.connect(this.ctx.destination);
+                osc1.start(t);
+                osc1.stop(t + 0.05);
+
+                const osc2 = this.ctx.createOscillator();
+                const gain2 = this.ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(180, t);
+                osc2.frequency.exponentialRampToValueAtTime(40, t + 0.07);
+
+                gain2.gain.setValueAtTime(0.75, t);
+                gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+
+                osc2.connect(gain2);
+                gain2.connect(this.ctx.destination);
+                osc2.start(t);
+                osc2.stop(t + 0.07);
+            } catch (e) {}
+        }
+    };
+
+    window.addEventListener('keydown', (e) => {
+        if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
+        AudioEngine.playClick();
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('button, input, .toggle-link')) {
+            AudioEngine.playClick();
+        }
+    });
+
+    let currentRole = 'developer';
+    let isRegister = false;
+    let pollInterval = null;
+    let lastIssuedCipher = '';
+
+    function setRole(role) {
+        currentRole = role;
+        const devBtn = document.getElementById('btn-dev');
+        const clientBtn = document.getElementById('btn-client');
+        const keyLabel = document.getElementById('key-label');
+        const submitBtn = document.getElementById('btn-submit');
+        const keyInput = document.getElementById('key');
+
+        if (role === 'developer') {
+            devBtn.className = 'role-btn active-dev';
+            clientBtn.className = 'role-btn';
+            keyLabel.innerText = 'Developer Secret Token';
+            keyInput.placeholder = 'DEV-XXXXXXXXXXXXXXXX';
+            submitBtn.style.background = 'var(--accent-cyan)';
+        } else {
+            clientBtn.className = 'role-btn active-client';
+            devBtn.className = 'role-btn';
+            keyLabel.innerText = 'Client Organization ID';
+            keyInput.placeholder = 'CLI-XXXXXXXXXXXXXXXX';
+            submitBtn.style.background = 'var(--accent-amber)';
+        }
+    }
+
+    function toggleAuthMode() {
+        isRegister = !isRegister;
+        document.getElementById('error-toast').innerText = '';
+        const emailGroup = document.getElementById('email-group');
+        const keyGroup = document.getElementById('key-group');
+        const submitBtn = document.getElementById('btn-submit');
+        const toggleLink = document.getElementById('toggle-auth');
+        const titleText = document.getElementById('titleText');
+
+        if (isRegister) {
+            emailGroup.style.display = 'block';
+            keyGroup.style.display = 'none';
+            submitBtn.innerText = 'Mint Security Profile';
+            toggleLink.innerHTML = 'Already registered? <span>Sign in to console</span>';
+            titleText.innerText = 'AXIS // REGISTER';
+        } else {
+            emailGroup.style.display = 'none';
+            keyGroup.style.display = 'block';
+            submitBtn.innerText = 'Dispatch Clearance';
+            toggleLink.innerHTML = 'No clearance profile? <span>Initialize registration</span>';
+            titleText.innerText = 'AXIS // AUTH';
+        }
+    }
+
+    async function handleAuthSubmit(e) {
+        e.preventDefault();
+        const toast = document.getElementById('error-toast');
+        toast.innerText = '';
+        toast.style.color = 'var(--accent-red)';
+
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const csrftoken = getCsrfToken();
+
+        if (isRegister) {
+            const email = document.getElementById('email').value.trim();
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (csrftoken) headers['X-CSRFToken'] = csrftoken;
+
+                const res = await fetch('/register/', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ username, email, password, role: currentRole })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    toast.innerText = data.error || JSON.stringify(data);
+                    return;
+                }
+
+                // Show Issued Key/Token in Modal
+                lastIssuedCipher = data.issued_cipher;
+                document.getElementById('register-success-modal').style.display = 'flex';
+                document.getElementById('reg-cipher-box').innerText = data.issued_cipher;
+                document.getElementById('reg-cipher-title').innerText = currentRole === 'developer'
+                    ? 'DEVELOPER SECRET HARDWARE TOKEN'
+                    : 'CLIENT ORGANIZATION ID';
+
+            } catch (err) {
+                toast.innerText = 'Network error during registration relay.';
+            }
+        } else {
+            const key = document.getElementById('key').value.trim();
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (csrftoken) headers['X-CSRFToken'] = csrftoken;
+
+                const res = await fetch('/login/', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ username, password, key })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    toast.innerText = data.error || (typeof data === 'string' ? data : JSON.stringify(data));
+                    return;
+                }
+                if (data.status === 'PENDING') {
+                    document.getElementById('handshake-modal').style.display = 'flex';
+                    startPolling(username);
+                }
+            } catch (err) {
+                toast.innerText = 'Network error during login handshake.';
+            }
+        }
+    }
+
+    function copyCipher() {
+        const text = document.getElementById('reg-cipher-box').innerText;
+        navigator.clipboard.writeText(text);
+        const btn = document.getElementById('btn-copy-cipher');
+        btn.innerText = 'COPIED!';
+        setTimeout(() => { btn.innerText = 'COPY CIPHER'; }, 1800);
+    }
+
+    function proceedToLogin() {
+        document.getElementById('register-success-modal').style.display = 'none';
+        if (isRegister) toggleAuthMode();
+        // Auto-fill key in form for instant login convenience
+        if (lastIssuedCipher) {
+            document.getElementById('key').value = lastIssuedCipher;
+        }
+    }
+
+    function startPolling(username) {
+        if (pollInterval) clearInterval(pollInterval);
+        const csrftoken = getCsrfToken();
+
+        pollInterval = setInterval(async () => {
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (csrftoken) headers['X-CSRFToken'] = csrftoken;
+
+                const res = await fetch('/check-login-status/', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ username })
+                });
+                const data = await res.json();
+                if (data.status === 'APPROVED') {
+                    clearInterval(pollInterval);
+                    localStorage.setItem('axis_token', data.token);
+                    localStorage.setItem('axis_user', data.username);
+                    localStorage.setItem('axis_role', data.role);
+
+                    if (data.role === 'client') {
+                        navigateThroughPortal('AUTH CONSOLE', 'CLIENT VAULT', '/dashboard/client/');
+                    } else {
+                        navigateThroughPortal('AUTH CONSOLE', 'DEVELOPER DASHBOARD', '/dashboard/developer/');
+                    }
+                }
+            } catch (err) {}
+        }, 2000);
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,963 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AXIS // Creative Engineering & Neural Core</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Cabinet+Grotesk:wght@800;900&display=swap" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #070707;
+      --fg: #ECEBE8;
+      --muted: #555552;
+      --accent: #E5FE40; /* Acid Lime */
+      --client-accent: #E5B338;
+      --line: rgba(255, 255, 255, 0.08);
+      --font-display: 'Syne', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      cursor: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-display);
+      overflow-x: hidden;
+      min-height: 100vh;
+      line-height: 1.1;
+      position: relative;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      opacity: 0.045;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      z-index: 999;
+    }
+
+    .grid-lines {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      grid-template-columns: 80px 1fr 1fr 80px;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .grid-col {
+      border-right: 1px solid var(--line);
+      height: 100%;
+    }
+    .grid-col:first-child { border-left: 1px solid var(--line); }
+
+    #cursor {
+      position: fixed;
+      top: 0; left: 0;
+      width: 14px;
+      height: 14px;
+      background: var(--accent);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 999999;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 12px var(--accent);
+      transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                  height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                  background-color 0.25s,
+                  opacity 0.2s;
+    }
+
+    #cursor.active {
+      width: 50px;
+      height: 50px;
+      background: rgba(229, 254, 64, 0.2);
+      border: 1.5px solid var(--accent);
+      box-shadow: 0 0 20px rgba(229, 254, 64, 0.4);
+    }
+
+    input, textarea, button, a, select {
+      cursor: none !important;
+    }
+
+    header {
+      position: relative;
+      z-index: 10;
+      padding: 30px 80px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+    }
+    .logo {
+      font-size: 1.25rem;
+      letter-spacing: -0.05em;
+      font-weight: 900;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-badge {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      background: rgba(255,255,255,0.06);
+      padding: 3px 8px;
+      border-radius: 20px;
+      color: var(--accent);
+      border: 1px solid rgba(229, 254, 64, 0.3);
+    }
+    .nav-status {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      white-space: nowrap;
+    }
+
+    .mini-badge {
+      width: 32px;
+      height: 32px;
+      border: 1px solid rgba(229, 254, 64, 0.4);
+      background: #111;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 10px rgba(229, 254, 64, 0.3);
+      vertical-align: middle;
+      overflow: hidden;
+    }
+    .mini-badge svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .hero {
+      position: relative;
+      z-index: 10;
+      padding: 100px 80px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .hero-meta {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      margin-bottom: 30px;
+      display: flex;
+      gap: 40px;
+    }
+    .massive-title {
+      font-size: clamp(3.5rem, 9.5vw, 11rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.04em;
+      line-height: 0.88;
+    }
+    .massive-title .outline-text {
+      color: transparent;
+      -webkit-text-stroke: 1.5px rgba(236, 235, 232, 0.4);
+      transition: color 0.4s, -webkit-text-stroke 0.4s;
+    }
+    .massive-title .outline-text:hover {
+      color: var(--accent);
+      -webkit-text-stroke: 1.5px var(--accent);
+    }
+
+    .marquee-container {
+      position: relative;
+      z-index: 10;
+      overflow: hidden;
+      white-space: nowrap;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 0;
+      background: #000;
+      margin: 60px 0;
+    }
+    .marquee-track {
+      display: inline-block;
+      white-space: nowrap;
+      animation: marquee 24s linear infinite;
+    }
+    .marquee-track span {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      margin-right: 40px;
+      letter-spacing: 0.15em;
+      color: #888;
+    }
+    .marquee-track span b {
+      color: var(--accent);
+    }
+    @keyframes marquee {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .terminal-section {
+      position: relative;
+      z-index: 10;
+      padding: 100px 80px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      border-top: 1px solid var(--line);
+    }
+    .terminal-desc h3 {
+      font-size: clamp(2rem, 3.5vw, 4rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+      margin-bottom: 24px;
+    }
+    .terminal-desc p {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #8E8D88;
+      max-width: 480px;
+    }
+
+    .lang-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 12px;
+    }
+    .lang-btn {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 6px 14px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .lang-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(229, 254, 64, 0.08);
+      box-shadow: 0 0 10px rgba(229, 254, 64, 0.2);
+    }
+
+    .raw-input-box {
+      background: #0D0D0C;
+      border: 1px solid var(--line);
+      padding: 30px;
+      position: relative;
+    }
+    .terminal-header {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    textarea {
+      width: 100%;
+      height: 140px;
+      background: #080808;
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 12px;
+      outline: none;
+      color: var(--fg);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      resize: none;
+      line-height: 1.5;
+    }
+    textarea:focus {
+      border-color: rgba(229, 254, 64, 0.3);
+    }
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+    }
+    .submit-btn {
+      background: var(--fg);
+      color: #000;
+      border: none;
+      padding: 14px 28px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .submit-btn:hover {
+      background: var(--accent);
+      transform: translateY(-2px);
+    }
+    .output-container {
+      margin-top: 24px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent);
+      line-height: 1.6;
+      min-height: 60px;
+      white-space: pre-wrap;
+    }
+
+    #cutscene {
+      position: fixed;
+      inset: 0;
+      background: #040404;
+      z-index: 100000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    #cutscene.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .character-stage {
+      position: relative;
+      width: 320px;
+      height: 380px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border: 1px solid rgba(229, 254, 64, 0.25);
+      background: radial-gradient(circle at center, rgba(229,254,64,0.08) 0%, transparent 70%);
+      box-shadow: 0 0 50px rgba(0,0,0,0.9);
+      transition: all 0.5s ease;
+    }
+
+    .cyber-avatar-svg {
+      width: 200px;
+      height: 200px;
+      transform: translateY(28px) scale(0.92);
+      transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease;
+      filter: grayscale(100%) brightness(0.4);
+    }
+    .character-stage.awakened .cyber-avatar-svg {
+      transform: translateY(-8px) scale(1.08);
+      filter: grayscale(0%) brightness(1.2) drop-shadow(0 0 25px rgba(229, 254, 64, 0.7));
+    }
+    .eye-glow {
+      opacity: 0;
+      transition: opacity 0.4s ease 0.6s, fill 0.3s;
+    }
+    .character-stage.awakened .eye-glow {
+      opacity: 1;
+      fill: var(--accent);
+      filter: drop-shadow(0 0 8px var(--accent));
+    }
+
+    .client-briefcase-svg {
+      width: 190px;
+      height: 190px;
+      transform: scale(0.9);
+      transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease;
+      filter: grayscale(100%) brightness(0.4);
+      display: none;
+    }
+    .character-stage.awakened .client-briefcase-svg {
+      transform: scale(1.05);
+      filter: grayscale(0%) brightness(1.2) drop-shadow(0 0 30px rgba(229, 179, 56, 0.8));
+    }
+    .briefcase-lid {
+      transform-origin: top center;
+      transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s;
+    }
+    .character-stage.awakened .briefcase-lid {
+      transform: translateY(-12px) rotateX(25deg);
+    }
+    .briefcase-beam {
+      opacity: 0;
+      transition: opacity 0.5s ease 0.8s;
+    }
+    .character-stage.awakened .briefcase-beam {
+      opacity: 1;
+    }
+
+    .scanner-laser {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 2px;
+      background: var(--accent);
+      box-shadow: 0 0 15px var(--accent);
+      opacity: 0;
+    }
+    .character-stage.awakened .scanner-laser {
+      opacity: 1;
+      animation: scanLaser 1.4s ease-in-out infinite alternate;
+    }
+    @keyframes scanLaser {
+      0% { top: 5%; }
+      100% { top: 95%; }
+    }
+
+    .hud-text-box {
+      margin-top: 28px;
+      text-align: center;
+      font-family: var(--font-mono);
+    }
+    .hud-tag {
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .hud-hero {
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      max-width: 600px;
+      line-height: 1.3;
+    }
+
+    @media (max-width: 900px) {
+      header, .hero, .terminal-section { padding-left: 24px; padding-right: 24px; }
+      .grid-lines { display: none; }
+      .terminal-section { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  {% include 'portal_transition.html' %}
+
+  <!-- Cutscene Overlay -->
+  <div id="cutscene">
+    <div class="character-stage" id="characterStage">
+      <div class="scanner-laser" id="scannerLaser"></div>
+
+      <!-- Developer Visor Avatar -->
+      <svg class="cyber-avatar-svg" id="avatarSvg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="30,20 70,20 85,55 75,85 25,85 15,55" stroke="#ECEBE8" stroke-width="2" fill="#0D0D0C" />
+        <line x1="15" y1="55" x2="85" y2="55" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+        <line x1="50" y1="20" x2="50" y2="85" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+        <rect class="eye-glow" x="32" y="47" width="12" height="4" rx="2" fill="#E5FE40" />
+        <rect class="eye-glow" x="56" y="47" width="12" height="4" rx="2" fill="#E5FE40" />
+        <polygon points="20,88 80,88 95,100 5,100" stroke="#ECEBE8" stroke-width="2" fill="#141413" />
+      </svg>
+
+      <!-- Client Briefcase Vault Avatar -->
+      <svg class="client-briefcase-svg" id="briefcaseSvg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M38,28 C38,18 62,18 62,28" stroke="#E5B338" stroke-width="3" fill="none"/>
+        <rect x="18" y="30" width="64" height="48" rx="4" stroke="#ECEBE8" stroke-width="2" fill="#121211" />
+        <polygon class="briefcase-beam" points="25,48 75,48 85,32 15,32" fill="rgba(229,179,56,0.3)" />
+        <rect class="briefcase-lid" x="16" y="28" width="68" height="22" rx="2" stroke="#E5B338" stroke-width="2" fill="#1b1b19" />
+        <rect x="28" y="46" width="6" height="8" fill="#E5B338" />
+        <rect x="66" y="46" width="6" height="8" fill="#E5B338" />
+      </svg>
+    </div>
+
+    <div class="hud-text-box">
+      <div class="hud-tag" id="hudStatus">[ BIOMETRIC VERIFICATION ]</div>
+      <div class="hud-hero" id="hudOperator">OPERATOR DETECTED</div>
+    </div>
+  </div>
+
+  <div class="grid-lines">
+    <div class="grid-col"></div>
+    <div class="grid-col"></div>
+    <div class="grid-col"></div>
+    <div class="grid-col"></div>
+  </div>
+
+  <div id="cursor"></div>
+
+  <header>
+    <div class="logo">
+      AXIS <span class="logo-badge">SYSTEMS // V.04</span>
+    </div>
+    <div class="nav-status" id="headerProfile">
+      [ AHMEDABAD // 23.0225° N, 72.5714° E ]
+    </div>
+  </header>
+
+  <main class="hero">
+    <div class="hero-meta">
+      <span>(01) RECURSIVE ARCHITECTURE</span>
+      <span>(02) BACKEND LOGIC AS ART</span>
+    </div>
+    <h1 class="massive-title">
+      WE BUILD<br>
+      <span class="outline-text magnetic-text">MACHINES</span><br>
+      NOT SITES.
+    </h1>
+  </main>
+
+  <div class="marquee-container">
+    <div class="marquee-track">
+      <span><b>DJANGO REST API</b> POWERED</span>
+      <span><b>AUTONOMOUS</b> PIPELINES</span>
+      <span><b>ZERO</b> TEMPLATES</span>
+      <span><b>BRUTALIST</b> ARCHITECTURE</span>
+      <span><b>HIGH-THROUGHPUT</b> WEBSOCKETS</span>
+    </div>
+  </div>
+
+  <section class="terminal-section">
+    <div class="terminal-desc">
+      <h3>RUN LIVE ARCHITECTURE DIAGNOSTIC</h3>
+      <p>Select engine bytecode. When dispatched, the recursive compiler triggers live diagnostics with your backend.</p>
+    </div>
+
+    <div class="raw-input-box">
+      <div class="lang-tabs">
+        <button class="lang-btn active" data-lang="python">PYTHON // DRF</button>
+        <button class="lang-btn" data-lang="java">JAVA // SPRING</button>
+        <button class="lang-btn" data-lang="php">PHP // LARAVEL</button>
+        <button class="lang-btn" data-lang="js">NODE // EXPRESS</button>
+      </div>
+
+      <div class="terminal-header">
+        <span id="activeLangTarget">TARGET: PYTHON_ENGINE // PORT: 8000</span>
+        <span id="apiState">STATUS: STANDBY</span>
+      </div>
+
+      <textarea id="promptInput" spellcheck="false"></textarea>
+
+      <div class="action-bar">
+        <span style="font-family: var(--font-mono); font-size: 0.75rem; color: #555;">CTRL + ENTER TO DISPATCH</span>
+        <button class="submit-btn" id="runBtn">DISPATCH PAYLOAD</button>
+      </div>
+
+      <div class="output-container" id="terminalOutput"></div>
+    </div>
+  </section>
+
+  <script>
+    const codeTemplates = {
+      python: `# Python / Django REST Framework Controller\ndef execute_task(payload):\n    # Automate invoice flow using Celery & PostgreSQL\n    return {"status": "dispatched", "queue": "high_priority"}`,
+      java: `// Java / Spring Boot Architecture Node\n@RestController\npublic class CoreEngine {\n    @PostMapping("/dispatch")\n    public ResponseEntity<String> execute() { return ResponseEntity.ok("ACK"); }\n}`,
+      php: `<?php\n// PHP / Laravel Microservice Endpoint\nnamespace Axis\\Controllers;\nclass RelayService extends Controller {\n    public function handle() { return response()->json(['code' => 200]); }\n}`,
+      js: `// Node / Express Async Event Streamer\nrouter.post('/relay', async (req, res) => {\n    await eventBroker.publish('DISPATCH_PAYLOAD', req.body);\n    res.status(200).send({ executed: true });\n});`
+    };
+
+    let currentSelectedLang = 'python';
+    const promptInput = document.getElementById('promptInput');
+    promptInput.value = codeTemplates.python;
+
+    // --- Cherry-MX Heavy Switch & Notification Audio Engine ---
+    const AudioEngine = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      },
+
+      playClick() {
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const osc1 = this.ctx.createOscillator();
+          const gain1 = this.ctx.createGain();
+          osc1.type = 'triangle';
+          osc1.frequency.setValueAtTime(1600, t);
+          osc1.frequency.exponentialRampToValueAtTime(320, t + 0.05);
+
+          gain1.gain.setValueAtTime(0.85, t);
+          gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+
+          osc1.connect(gain1);
+          gain1.connect(this.ctx.destination);
+          osc1.start(t);
+          osc1.stop(t + 0.05);
+
+          const osc2 = this.ctx.createOscillator();
+          const gain2 = this.ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(180, t);
+          osc2.frequency.exponentialRampToValueAtTime(40, t + 0.07);
+
+          gain2.gain.setValueAtTime(0.75, t);
+          gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+
+          osc2.connect(gain2);
+          gain2.connect(this.ctx.destination);
+          osc2.start(t);
+          osc2.stop(t + 0.07);
+        } catch (e) {}
+      },
+
+      playWakeUpAudio() {
+        try {
+          const audio = new Audio("{% static 'mixkit-retro-game-notification-212.wav' %}");
+          audio.volume = 1.0;
+          audio.play().catch(() => this.playProceduralBoot());
+        } catch (e) {
+          this.playProceduralBoot();
+        }
+      },
+
+      playGlitchSFX() {
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(1200, t);
+          osc.frequency.setValueAtTime(300, t + 0.08);
+          osc.frequency.setValueAtTime(950, t + 0.16);
+
+          gain.gain.setValueAtTime(0.35, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.25);
+        } catch (e) {}
+      },
+
+      playDisconnectSound() {
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(340, t);
+          osc.frequency.exponentialRampToValueAtTime(40, t + 1.2);
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(1200, t);
+          filter.frequency.exponentialRampToValueAtTime(100, t + 1.2);
+
+          gain.gain.setValueAtTime(0.65, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 1.2);
+        } catch (e) {}
+      },
+
+      playProceduralBoot() {
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(320, t);
+          osc.frequency.exponentialRampToValueAtTime(80, t + 0.6);
+
+          gain.gain.setValueAtTime(0.85, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.6);
+        } catch (e) {}
+      }
+    };
+
+    window.addEventListener('keydown', (e) => {
+      if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
+      AudioEngine.playClick();
+    });
+
+    document.addEventListener('click', (e) => {
+      AudioEngine.init();
+      if (e.target.closest('button, .toggle-mode, input, textarea, .lang-btn, a')) {
+        AudioEngine.playClick();
+      }
+    });
+
+    // --- Cursor & Magnetic Effects ---
+    const cursor = document.getElementById('cursor');
+    let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    let pos = { x: mouse.x, y: mouse.y };
+
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+      cursor.style.opacity = '1';
+    });
+
+    gsap.ticker.add(() => {
+      pos.x += (mouse.x - pos.x) * 0.25;
+      pos.y += (mouse.y - pos.y) * 0.25;
+      gsap.set(cursor, { x: pos.x, y: pos.y });
+    });
+
+    function attachCursorHover() {
+      const targets = document.querySelectorAll('button, input, textarea, a, .role-btn, .lang-btn');
+      targets.forEach(el => {
+        el.addEventListener('mouseenter', () => cursor.classList.add('active'));
+        el.addEventListener('mouseleave', () => cursor.classList.remove('active'));
+      });
+    }
+    attachCursorHover();
+
+    // --- Language Tabs Switcher ---
+    const langBtns = document.querySelectorAll('.lang-btn');
+    const activeLangTarget = document.getElementById('activeLangTarget');
+
+    langBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        langBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentSelectedLang = btn.getAttribute('data-lang');
+        promptInput.value = codeTemplates[currentSelectedLang];
+        activeLangTarget.textContent = `TARGET: ${currentSelectedLang.toUpperCase()}_ENGINE // PORT: 8000`;
+      });
+    });
+
+    // --- Telemetry Dispatch Sequence ---
+    const runBtn = document.getElementById('runBtn');
+    const terminalOutput = document.getElementById('terminalOutput');
+    const apiState = document.getElementById('apiState');
+
+    runBtn.addEventListener('click', async () => {
+      const token = localStorage.getItem('axis_token');
+
+      if (!token) {
+        navigateThroughPortal('DASHBOARD', 'SECURITY TERMINAL', '/auth/');
+        return;
+      }
+
+      const val = promptInput.value.trim();
+      if (!val) {
+        terminalOutput.textContent = "! ERR: BUFFER EMPTY. SUPPLY BYTECODE.";
+        return;
+      }
+
+      apiState.textContent = "STATUS: COMPILING BYTECODE...";
+      AudioEngine.playGlitchSFX();
+
+      const telemetryFrames = [
+        `[#] INITIALIZING COMPILER BUFFER [${currentSelectedLang.toUpperCase()}]...`,
+        `[#] INJECTING SECURITY TOKEN CIPHER... [VERIFIED]`,
+        `[#] BYPASSING KERNEL RECURSION TABLE...`,
+        `[#] TRANSLATING SYNTAX AST NODE TREE...`,
+        `[#] PACKET ASSEMBLED. FIRING PIPELINE -> /analyze-architecture/...`
+      ];
+
+      terminalOutput.textContent = "";
+      for (let i = 0; i < telemetryFrames.length; i++) {
+        await new Promise(r => setTimeout(r, 90));
+        terminalOutput.textContent += telemetryFrames[i] + "\n";
+      }
+
+      try {
+        const response = await fetch('/analyze-architecture/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Token ${token}` : ''
+          },
+          body: JSON.stringify({ query: val, language: currentSelectedLang })
+        });
+
+        if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+        const data = await response.json();
+
+        apiState.textContent = "STATUS: 200 OK (COMPILED)";
+
+        let resLog = `\n>>> [EXECUTION COMPLETED // 200 OK]\n`;
+        resLog += `[SYSTEM ARCHITECTURE]\n-> ${data.architecture}\n\n`;
+        resLog += `[MARKET VALUATION]\n-> ${data.market_valuation}\n\n`;
+        resLog += `[DEPLOYMENT PIPELINE]\n`;
+        data.execution_roadmap.forEach(step => {
+          resLog += `-> ${step}\n`;
+        });
+
+        terminalOutput.textContent += resLog;
+      } catch (err) {
+        apiState.textContent = "STATUS: CONNECTION FAILED";
+        terminalOutput.textContent += `\n! CRITICAL FAULT: Pipeline handshake failed.\n! Reason: ${err.message}`;
+      }
+    });
+
+    const headerProfile = document.getElementById('headerProfile');
+    const cutscene = document.getElementById('cutscene');
+    const characterStage = document.getElementById('characterStage');
+    const avatarSvg = document.getElementById('avatarSvg');
+    const briefcaseSvg = document.getElementById('briefcaseSvg');
+    const hudStatus = document.getElementById('hudStatus');
+    const hudOperator = document.getElementById('hudOperator');
+
+    function triggerWakeUpSequence(username, role, onComplete) {
+      cutscene.classList.add('active');
+
+      if (role === 'client') {
+        avatarSvg.style.display = 'none';
+        briefcaseSvg.style.display = 'block';
+        characterStage.style.borderColor = 'rgba(229, 179, 56, 0.4)';
+        hudStatus.textContent = "[ INITIALIZING CLIENT VAULT ]";
+        hudStatus.style.color = 'var(--client-accent)';
+      } else {
+        avatarSvg.style.display = 'block';
+        briefcaseSvg.style.display = 'none';
+        characterStage.style.borderColor = 'rgba(229, 254, 64, 0.25)';
+        hudStatus.textContent = "[ INITIALIZING NEURAL CORE ]";
+        hudStatus.style.color = 'var(--accent)';
+      }
+
+      hudOperator.textContent = "SYNCHRONIZING PROTOCOLS...";
+      AudioEngine.playWakeUpAudio();
+
+      setTimeout(() => {
+        characterStage.classList.add('awakened');
+        hudStatus.textContent = (role === 'client') ? "[ ASSETS UNLOCKED // VAULT OPEN ]" : "[ IDENTITY CONFIRMED // ACCESS GRANTED ]";
+        hudOperator.textContent = `WELCOME, ${username.toUpperCase()}`;
+      }, 350);
+
+      setTimeout(() => {
+        const dest = document.getElementById('headerProfile').getBoundingClientRect();
+        gsap.to(characterStage, {
+          x: dest.left - (window.innerWidth / 2) + 60,
+          y: dest.top - (window.innerHeight / 2) + 20,
+          scale: 0.12,
+          opacity: 0,
+          duration: 0.8,
+          ease: 'power3.inOut',
+          onComplete: () => {
+            gsap.set(characterStage, { clearProps: "all" });
+            cutscene.classList.remove('active');
+            characterStage.classList.remove('awakened');
+            if (onComplete) onComplete();
+          }
+        });
+
+        gsap.to([hudStatus, hudOperator], { opacity: 0, duration: 0.4, onComplete: () => gsap.set([hudStatus, hudOperator], { clearProps: "all" }) });
+      }, 2300);
+    }
+
+    function triggerDisconnectSequence(username, role) {
+      cutscene.classList.add('active');
+
+      if (role === 'client') {
+        avatarSvg.style.display = 'none';
+        briefcaseSvg.style.display = 'block';
+        hudStatus.textContent = "[ VAULT ENCRYPTION ENGAGED ]";
+        hudStatus.style.color = "var(--client-accent)";
+      } else {
+        avatarSvg.style.display = 'block';
+        briefcaseSvg.style.display = 'none';
+        hudStatus.textContent = "[ SYSTEM POWER-DOWN INITIALIZED ]";
+        hudStatus.style.color = "var(--accent)";
+      }
+
+      characterStage.classList.add('awakened');
+      gsap.fromTo(characterStage, { scale: 0.2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: 'power2.out' });
+
+      hudOperator.textContent = `CLOSING SESSION // [ ${username.toUpperCase()} ]`;
+      AudioEngine.playDisconnectSound();
+
+      setTimeout(() => {
+        characterStage.classList.remove('awakened');
+        hudStatus.textContent = "[ CLEARANCE SUSPENDED ]";
+        hudOperator.textContent = "THANK YOU. COME BACK TOMORROW FOR MORE TASKS.";
+      }, 900);
+
+      setTimeout(() => {
+        localStorage.clear();
+        navigateThroughPortal('DASHBOARD', 'SECURITY TERMINAL', '/auth/');
+      }, 2800);
+    }
+
+    function renderActiveHeader(user, role) {
+      const badgeSvg = (role === 'client')
+        ? `<div class="mini-badge" style="border-color:var(--client-accent); box-shadow:0 0 10px rgba(229,179,56,0.4);">
+            <svg viewBox="0 0 100 100" fill="none"><rect x="18" y="30" width="64" height="48" rx="4" stroke="#E5B338" stroke-width="6" fill="#1b1b19"/><rect x="28" y="46" width="10" height="12" fill="#E5B338"/><rect x="62" y="46" width="10" height="12" fill="#E5B338"/></svg>
+          </div>`
+        : `<div class="mini-badge">
+            <svg viewBox="0 0 100 100" fill="none"><polygon points="30,20 70,20 85,55 75,85 25,85 15,55" stroke="#ECEBE8" stroke-width="4" fill="#0D0D0C"/><rect x="32" y="47" width="12" height="6" rx="2" fill="#E5FE40"/><rect x="56" y="47" width="12" height="6" rx="2" fill="#E5FE40"/></svg>
+          </div>`;
+
+      const roleColor = (role === 'client') ? 'var(--client-accent)' : 'var(--accent)';
+
+      headerProfile.innerHTML = `
+        ${badgeSvg}
+        <span>${role.toUpperCase()}: <span style="color:${roleColor}; font-weight:700;">[ ${user.toUpperCase()} ]</span></span>
+        <span style="color:var(--line);">|</span>
+        <a href="#" id="logoutLink" style="color:#ff5252; text-decoration:none;">DISCONNECT</a>
+      `;
+
+      document.getElementById('logoutLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        triggerDisconnectSequence(user, role);
+      });
+
+      attachCursorHover();
+    }
+
+    function checkAuthSession() {
+      const token = localStorage.getItem('axis_token');
+      const user = localStorage.getItem('axis_user') || 'Smit';
+      const role = localStorage.getItem('axis_role') || 'developer';
+      const justLoggedIn = sessionStorage.getItem('axis_just_logged_in');
+
+      if (token) {
+        if (!justLoggedIn) {
+          sessionStorage.setItem('axis_just_logged_in', 'true');
+          triggerWakeUpSequence(user, role, () => {
+            renderActiveHeader(user, role);
+          });
+        } else {
+          renderActiveHeader(user, role);
+        }
+        return true;
+      } else {
+        navigateThroughPortal('DASHBOARD', 'SECURITY TERMINAL', '/auth/');
+        return false;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      checkAuthSession();
+    });
+  </script>
+</body>
+</html>

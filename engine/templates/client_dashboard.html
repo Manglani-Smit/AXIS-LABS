@@ -1,0 +1,306 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AXIS // B2B CLIENT VAULT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #060606;
+      --card-bg: #0D0E13;
+      --fg: #ECEBE8;
+      --muted: #64748B;
+      --line: rgba(255, 255, 255, 0.08);
+      --gold: #E5B338;
+      --gold-glow: rgba(229, 179, 56, 0.35);
+      --font-display: 'Syne', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; cursor: crosshair; }
+    body { background-color: var(--bg); color: var(--fg); font-family: var(--font-display); min-height: 100vh; overflow-x: hidden; }
+
+    /* Client Cutscene */
+    #cutscene {
+      position: fixed; inset: 0; background: #040404; z-index: 99999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: opacity 0.5s ease;
+    }
+    .stage {
+      width: 300px; height: 320px; border: 1px solid rgba(229, 179, 56, 0.4);
+      background: radial-gradient(circle, rgba(229,179,56,0.1), transparent);
+      display: flex; align-items: center; justify-content: center; position: relative;
+    }
+    .beam { opacity: 0; transition: opacity 0.5s ease 0.6s; fill: rgba(229,179,56,0.3); }
+    .stage.awakened .beam { opacity: 1; }
+    .lid { transform-origin: top center; transition: transform 0.8s ease 0.4s; }
+    .stage.awakened .lid { transform: translateY(-10px) rotateX(25deg); }
+
+    header {
+      padding: 18px 48px; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--line); background: rgba(7, 7, 9, 0.94);
+      position: sticky; top: 0; z-index: 100; backdrop-filter: blur(14px);
+    }
+    .logo { font-size: 1.2rem; font-weight: 900; letter-spacing: -0.04em; }
+    .badge {
+      font-family: var(--font-mono); font-size: 0.65rem; color: var(--gold);
+      border: 1px solid var(--gold); padding: 3px 8px; border-radius: 4px;
+    }
+
+    .hero { padding: 48px 48px 24px; }
+    .hero-pre { font-family: var(--font-mono); font-size: 0.75rem; color: var(--gold); letter-spacing: 0.2em; }
+    .title { font-size: clamp(2.4rem, 5.5vw, 5.5rem); font-weight: 900; line-height: 0.95; text-transform: uppercase; margin-top: 8px; color: var(--gold); }
+
+    .showcase-container { padding: 20px 48px 100px; }
+    .filter-bar {
+      display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono);
+      font-size: 0.75rem; border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 30px; color: var(--muted);
+    }
+    .template-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 32px;
+    }
+
+    .template-card {
+      background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 18px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s;
+    }
+    .template-card:hover {
+      transform: translateY(-6px); border-color: var(--gold);
+      box-shadow: 0 16px 30px rgba(0, 0, 0, 0.8), 0 0 20px var(--gold-glow);
+    }
+
+    .mock-browser {
+      height: 220px; background: #030406; border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .browser-bar {
+      background: #111318; padding: 7px 12px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-family: var(--font-mono); font-size: 0.6rem;
+    }
+    .browser-dots { display: flex; gap: 5px; }
+    .b-dot { width: 7px; height: 7px; border-radius: 50%; background: #334155; }
+    .browser-slug { color: var(--gold); background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 3px; }
+
+    .web-preview-canvas {
+      flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: space-between;
+      font-family: var(--font-mono); font-size: 0.65rem; color: #fff;
+    }
+    .web-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px; }
+    .web-hero h5 { font-size: 0.95rem; font-weight: 900; line-height: 1.1; margin: 6px 0 3px; text-transform: uppercase; color: #fff; }
+    .web-hero p { color: var(--muted); font-size: 0.58rem; line-height: 1.3; }
+
+    .web-widgets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+    .web-widget-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 6px; border-radius: 4px; }
+    .widget-val { font-size: 0.75rem; font-weight: 700; color: var(--gold); }
+
+    .card-meta { margin-top: 12px; font-family: var(--font-mono); }
+    .card-meta h4 { font-size: 1.1rem; font-family: var(--font-display); font-weight: 800; }
+    .card-meta .specs { font-size: 0.72rem; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+    .card-meta .price-tag { font-size: 0.85rem; color: var(--gold); font-weight: 700; margin-top: 6px; }
+
+    .card-btn {
+      width: 100%; background: #161822; border: 1px solid var(--line); color: var(--fg);
+      padding: 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700;
+      letter-spacing: 0.1em; cursor: pointer; text-transform: uppercase; transition: all 0.25s ease; margin-top: 14px;
+    }
+    .card-btn:hover { background: var(--gold); color: #000; border-color: var(--gold); box-shadow: 0 0 14px var(--gold-glow); }
+  </style>
+</head>
+<body>
+
+  {% include 'portal_transition.html' %}
+
+  <!-- Client Briefcase Cutscene Overlay -->
+  <div id="cutscene">
+    <div class="stage" id="stage">
+      <svg viewBox="0 0 100 100" width="160" height="160" fill="none">
+        <path d="M38,28 C38,18 62,18 62,28" stroke="#E5B338" stroke-width="3" />
+        <rect x="18" y="30" width="64" height="48" rx="4" stroke="#ECEBE8" stroke-width="2" fill="#121211" />
+        <polygon class="beam" points="25,48 75,48 85,32 15,32" />
+        <rect class="lid" x="16" y="28" width="68" height="22" rx="2" stroke="#E5B338" stroke-width="2" fill="#1b1b19" />
+      </svg>
+    </div>
+    <div style="font-family: var(--font-mono); text-align: center; margin-top: 20px;">
+      <div style="font-size: 0.7rem; color: var(--gold); letter-spacing: 0.2em;">[ ASSETS UNLOCKED // VAULT READY ]</div>
+      <div style="font-size: 1.3rem; font-weight: 900; margin-top: 6px;" id="welcomeMsg">WELCOME, CLIENT</div>
+    </div>
+  </div>
+
+  <header>
+    <div class="logo">AXIS LABS // <span class="badge">B2B PORTAL</span></div>
+    <div style="font-family: var(--font-mono); font-size: 0.8rem;">
+      ENTITY: <span style="color: var(--gold);" id="userTag">NEXUS</span> |
+      <a href="#" onclick="logout()" style="color: #ef4444; text-decoration: none;">DISCONNECT</a>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="hero-pre">[ 50+ ENTERPRISE ASSET SCHEMAS // ONE-CLICK DEPLOY & ACQUISITION ]</div>
+    <h1 class="title">COMMERCIAL ASSET HUB</h1>
+  </div>
+
+  <section class="showcase-container">
+    <div class="filter-bar">
+      <div>CATALOGUE: <span style="color:var(--gold); font-weight:700;">50 VERIFIED ASSETS</span></div>
+      <div>LICENSE: <span style="color:var(--gold);">ENTERPRISE PERPETUAL REPO LICENSE</span></div>
+    </div>
+    <div class="template-grid" id="templateGrid"></div>
+  </section>
+
+  <script>
+    const AudioEngine = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      },
+      playClick() {
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const osc1 = this.ctx.createOscillator();
+          const gain1 = this.ctx.createGain();
+          osc1.type = 'triangle';
+          osc1.frequency.setValueAtTime(1600, t);
+          osc1.frequency.exponentialRampToValueAtTime(320, t + 0.05);
+          gain1.gain.setValueAtTime(0.85, t);
+          gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+          osc1.connect(gain1);
+          gain1.connect(this.ctx.destination);
+          osc1.start(t);
+          osc1.stop(t + 0.05);
+
+          const osc2 = this.ctx.createOscillator();
+          const gain2 = this.ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(180, t);
+          osc2.frequency.exponentialRampToValueAtTime(40, t + 0.07);
+          gain2.gain.setValueAtTime(0.75, t);
+          gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+          osc2.connect(gain2);
+          gain2.connect(this.ctx.destination);
+          osc2.start(t);
+          osc2.stop(t + 0.07);
+        } catch (e) {}
+      },
+      playWakeUpAudio() {
+        try {
+          const audio = new Audio("{% static 'mixkit-retro-game-notification-212.wav' %}");
+          audio.volume = 1.0;
+          audio.play().catch(() => {});
+        } catch (e) {}
+      }
+    };
+
+    window.addEventListener('keydown', () => AudioEngine.playClick());
+    document.addEventListener('click', (e) => {
+      AudioEngine.init();
+      if (e.target.closest('button, .card-btn, a')) AudioEngine.playClick();
+    });
+
+    const realWebArchitectures = [
+      { name: "Stripe-Grade PayCore", domain: "core.payengine.io", type: "FINTECH GATEWAY", tagline: "Atomic multi-currency payments with automated reconciliation.", stat1: "99.999% SLA", stat2: "14ms Latency", budget: "$4,800", stack: "Django REST, Redis, PostgreSQL, Celery", heroText: "GLOBAL PAYMENTS INFRASTRUCTURE", subText: "Process millions in transactions with sub-second finality." },
+      { name: "Linear-Style Issue Engine", domain: "app.linear-flow.dev", type: "PROJECT OS", tagline: "Ultra-fast keyboard-first issue tracker with real-time WebSockets.", stat1: "Sync: 0ms", stat2: "Offline-First", budget: "$5,200", stack: "Django Channels, WebSockets, Redis, React", heroText: "HIGH VELOCITY WORKFLOW ENGINE", subText: "Engineered for engineering teams who value millisecond latency." },
+      { name: "Vercel-Inspired Cloud Edge", domain: "edge.vercel-node.cloud", type: "DEVOPS CLOUD", tagline: "Autonomous Git deployment runner with isolated container pods.", stat1: "Cold Start: 8ms", stat2: "Isolated Pods", budget: "$6,500", stack: "Docker Swarm, Kubernetes API, Django, MinIO", heroText: "ZERO-CONFIG EDGE COMPUTING", subText: "Push to deploy. Automated rollback and live cluster telemetry." },
+      { name: "Perplexity-Tier Search Node", domain: "query.mindmesh.ai", type: "AI SEARCH CORE", tagline: "Semantic search engine with vector embeddings and citations.", stat1: "Vector: Qdrant", stat2: "1,200 Tokens/s", budget: "$7,200", stack: "FastAPI, LangChain, PyTorch, Django REST", heroText: "CONVERSATIONAL NEURAL RETRIEVAL", subText: "Ask anything. Real-time internet search with verifiable citations." },
+      { name: "Supabase-Class Cloud DB", domain: "db.hyperbase.sh", type: "DATABASE PLATFORM", tagline: "PostgreSQL console with instant auto-generated REST APIs.", stat1: "RLS Policies", stat2: "Instant REST", budget: "$5,900", stack: "PostgreSQL 16, Django, Go Proxy, Docker", heroText: "OPEN SOURCE BACKEND ENGINE", subText: "Database, authentication, storage, and auto-generated APIs." },
+      { name: "Aether Brutalist Storefront", domain: "shop.aether-brutal.com", type: "HIGH-END ECOMMERCE", tagline: "Ultra-luxury fashion & streetwear commerce with 3D models.", stat1: "GMV: $2.4M", stat2: "Shopify Sync", budget: "$4,200", stack: "Django, GraphQL, Next.js, Stripe", heroText: "AVANT-GARDE CYBER APPAREL", subText: "Architectural apparel designed for high-density physical environments." },
+      { name: "Midjourney Neural Canvas", domain: "studio.neuralgen.art", type: "GENERATIVE AI SUITE", tagline: "Distributed image generation studio with GPU job scheduling.", stat1: "A100 Cluster", stat2: "Queue: 40ms", budget: "$8,400", stack: "PyTorch, CUDA, Celery, Redis, Django", heroText: "GENERATIVE LATENT DIFFUSION", subText: "Generate photorealistic assets from architectural blueprints." },
+      { name: "ZeroTrust Vault Terminal", domain: "vault.zerotrust-sec.io", type: "CYBER SECURITY", tagline: "Hardware-backed secret management with email 2FA authorization.", stat1: "AES-256-GCM", stat2: "Zero-Knowledge", budget: "$5,500", stack: "Go, Django, WebSockets, Argon2", heroText: "CRYPTOGRAPHIC IDENTITY VAULT", subText: "Out-of-band email authorization with self-destructing tokens." }
+    ];
+
+    function renderClientGrid() {
+      const grid = document.getElementById('templateGrid');
+      if (!grid) return;
+      let html = '';
+      for (let i = 1; i <= 50; i++) {
+        const item = realWebArchitectures[(i - 1) % realWebArchitectures.length];
+        html += `
+          <div class="template-card">
+            <div class="mock-browser">
+              <div class="browser-bar">
+                <div class="browser-dots">
+                  <div class="b-dot" style="background:#ef4444;"></div>
+                  <div class="b-dot" style="background:#eab308;"></div>
+                  <div class="b-dot" style="background:#22c55e;"></div>
+                </div>
+                <div class="browser-slug">https://${item.domain}</div>
+              </div>
+              <div class="web-preview-canvas">
+                <div class="web-header">
+                  <span style="font-weight:800; color:var(--gold);">${item.name}</span>
+                  <span style="font-size:0.55rem; color:var(--muted);">${item.type}</span>
+                </div>
+                <div class="web-hero">
+                  <h5>${item.heroText}</h5>
+                  <p>${item.subText}</p>
+                </div>
+                <div class="web-widgets">
+                  <div class="web-widget-box"><div class="widget-val">${item.stat1}</div></div>
+                  <div class="web-widget-box"><div class="widget-val">${item.stat2}</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="card-meta">
+              <h4>${item.name} // REV_${String(i).padStart(2, '0')}</h4>
+              <div class="specs"><strong>Stack:</strong> ${item.stack}<br><strong>Commercial Value:</strong> ${item.tagline}</div>
+              <div class="price-tag">ACQUISITION: ${item.budget} USD</div>
+            </div>
+            <button type="button" class="card-btn" onclick="openSpecDeck(${i})">
+              USE THIS TEMPLATE / PURCHASE
+            </button>
+          </div>
+        `;
+      }
+      grid.innerHTML = html;
+    }
+
+    function openSpecDeck(id) {
+      if (typeof navigateThroughPortal === "function") {
+        navigateThroughPortal('CLIENT VAULT', `INSPECT #${id}`, `/template/${id}/?mode=client`);
+      } else {
+        window.location.href = `/template/${id}/?mode=client`;
+      }
+    }
+
+    function logout() {
+      AudioEngine.playClick();
+      localStorage.clear();
+      window.location.href = '/';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const user = localStorage.getItem('axis_user') || 'CLIENT';
+      document.getElementById('userTag').innerText = user.toUpperCase();
+      document.getElementById('welcomeMsg').innerText = `WELCOME, ${user.toUpperCase()}`;
+
+      AudioEngine.playWakeUpAudio();
+      setTimeout(() => {
+        const st = document.getElementById('stage');
+        if (st) st.classList.add('awakened');
+      }, 300);
+
+      setTimeout(() => {
+        const cs = document.getElementById('cutscene');
+        if (cs && window.gsap) {
+          gsap.to(cs, { opacity: 0, duration: 0.6, onComplete: () => { cs.style.display = 'none'; } });
+        } else if (cs) {
+          cs.style.display = 'none';
+        }
+      }, 2000);
+
+      renderClientGrid();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!-- AXIS PORTAL TRANSITION COMPONENT -->
+<style>
+  .portal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 4, 4, 0.96);
+    backdrop-filter: blur(16px);
+    z-index: 9999999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .portal-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .portal-scene {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    width: 90%;
+    max-width: 720px;
+  }
+
+  .door-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .door-frame {
+    width: 90px;
+    height: 150px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 3px solid #E5FE40;
+    background: #090908;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+  }
+
+  .door-leaf {
+    position: absolute;
+    inset: 0;
+    background: #151513;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transform-origin: left center;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .door-frame.open .door-leaf {
+    transform: perspective(400px) rotateY(-85deg);
+  }
+
+  .door-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(229, 254, 64, 0.35) 0%, transparent 80%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  .door-frame.open .door-glow { opacity: 1; }
+  .gold-glow { background: radial-gradient(circle, rgba(229, 179, 56, 0.45) 0%, transparent 80%); }
+
+  .door-label {
+    font-family: 'Space Mono', monospace, 'JetBrains Mono';
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: #E5FE40;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 4px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  .corridor-track {
+    flex: 1;
+    height: 120px;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .laser-track-line {
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #E5FE40, #E5B338);
+    box-shadow: 0 0 10px #E5FE40;
+    position: absolute;
+    bottom: 25px;
+  }
+
+  .cyber-runner {
+    position: absolute;
+    bottom: 25px;
+    left: 0;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 0 10px rgba(229, 254, 64, 0.8));
+  }
+
+  .transition-telemetry {
+    font-family: 'Space Mono', monospace, 'JetBrains Mono';
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 36px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+</style>
+
+<!-- Portal Overlay Structure -->
+<div id="portalTransition" class="portal-overlay">
+  <div class="portal-scene">
+    <!-- Exit Door (Source) -->
+    <div class="door-wrapper">
+      <div class="door-frame" id="sourceDoor">
+        <div class="door-leaf left-leaf"></div>
+        <div class="door-glow"></div>
+      </div>
+      <div class="door-label" id="sourceDoorLabel">ORIGIN</div>
+    </div>
+
+    <!-- Runner Corridor / Character Path -->
+    <div class="corridor-track">
+      <div class="laser-track-line"></div>
+      <div class="cyber-runner" id="cyberRunner">
+        <svg viewBox="0 0 60 70" width="46" height="54">
+          <circle cx="30" cy="16" r="10" fill="#0D0D0C" stroke="#ECEBE8" stroke-width="2"/>
+          <rect x="24" y="14" width="12" height="4" rx="2" fill="#E5FE40"/>
+          <path d="M22,26 L38,26 L34,44 L26,44 Z" fill="#141413" stroke="#ECEBE8" stroke-width="2"/>
+          <line class="leg-l" x1="27" y1="44" x2="18" y2="62" stroke="#E5FE40" stroke-width="3" stroke-linecap="round"/>
+          <line class="leg-r" x1="33" y1="44" x2="42" y2="62" stroke="#E5FE40" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Entry Door (Destination) -->
+    <div class="door-wrapper">
+      <div class="door-frame" id="targetDoor">
+        <div class="door-leaf right-leaf"></div>
+        <div class="door-glow gold-glow"></div>
+      </div>
+      <div class="door-label" id="targetDoorLabel">DESTINATION</div>
+    </div>
+  </div>
+
+  <div class="transition-telemetry" id="transitionStatusText">
+    [ INITIALIZING QUANTUM PORTAL RELAY ]
+  </div>
+</div>
+
+<script>
+  function navigateThroughPortal(fromLabel, toLabel, targetUrl) {
+    const overlay = document.getElementById('portalTransition');
+    const sourceDoor = document.getElementById('sourceDoor');
+    const targetDoor = document.getElementById('targetDoor');
+    const sourceLabel = document.getElementById('sourceDoorLabel');
+    const destLabel = document.getElementById('targetDoorLabel');
+    const runner = document.getElementById('cyberRunner');
+    const statusText = document.getElementById('transitionStatusText');
+
+    if (!overlay) {
+      window.location.href = targetUrl;
+      return;
+    }
+
+    sourceLabel.textContent = fromLabel.toUpperCase();
+    destLabel.textContent = toLabel.toUpperCase();
+    statusText.textContent = `[ RELAYING CONTEXT: ${fromLabel.toUpperCase()} ──▶ ${toLabel.toUpperCase()} ]`;
+
+    // 1. Overlay fade in
+    overlay.classList.add('active');
+
+    // 2. Open Source Door
+    setTimeout(() => {
+      sourceDoor.classList.add('open');
+    }, 200);
+
+    // 3. Runner runs across corridor to Destination Door
+    setTimeout(() => {
+      targetDoor.classList.add('open');
+
+      if (window.gsap) {
+        gsap.fromTo(runner,
+          { left: "5%" },
+          {
+            left: "95%",
+            duration: 1.1,
+            ease: "power2.inOut",
+            onComplete: () => {
+              targetDoor.classList.remove('open');
+              statusText.textContent = `[ ARRIVED: DEPLOYING ${toLabel.toUpperCase()} ]`;
+              setTimeout(() => {
+                window.location.href = targetUrl;
+              }, 350);
+            }
+          }
+        );
+      } else {
+        setTimeout(() => {
+          window.location.href = targetUrl;
+        }, 1100);
+      }
+    }, 500);
+  }
+</script>
