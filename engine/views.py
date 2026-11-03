@@ -213,11 +213,13 @@ def send_email_in_background(subject, plain_message, from_email, to_email, html_
         if html_message:
             email = EmailMultiAlternatives(subject, plain_message, from_email, to_email)
             email.attach_alternative(html_message, "text/html")
-            email.send(fail_silently=True)
+            email.send(fail_silently=False)
         else:
-            send_mail(subject, plain_message, from_email, to_email, fail_silently=True)
+            send_mail(subject, plain_message, from_email, to_email, fail_silently=False)
+        print(f"[MAIL DISPATCH SUCCESS] Verification signal routed to: {to_email}")
     except Exception as e:
-        print("Background mail relay failed:", e)
+        print(f"\n[CRITICAL SMTP RELAY FAILURE] Target: {to_email} | Error: {e}")
+        traceback.print_exc()
 
 
 @csrf_exempt
@@ -399,13 +401,20 @@ def login_view(request):
     profile.login_approval_status = 'PENDING'
     profile.save()
 
-    # DYNAMIC HOST RESOLUTION (Auto-detects localhost vs render HTTPS domain)
+    # Dynamic Host Resolution
     host = request.get_host()
     proto = 'https' if request.is_secure() or 'onrender.com' in host else 'http'
     base_url = f"{proto}://{host}"
 
     approve_link = f"{base_url}/verify-login/{temp_token}/approve/"
     reject_link = f"{base_url}/verify-login/{temp_token}/reject/"
+
+    # FALLBACK PRINT: Direct terminal log link
+    print("\n" + "="*80)
+    print(f">> [2FA CLEARANCE REQUESTED FOR OPERATOR: {authenticated_user.username.upper()}]")
+    print(f">> DIRECT 2FA APPROVE LINK: {approve_link}")
+    print(f">> DIRECT 2FA REJECT LINK:  {reject_link}")
+    print("="*80 + "\n")
 
     target_email = authenticated_user.email or getattr(settings, 'EMAIL_HOST_USER', '')
     if target_email:
@@ -419,19 +428,17 @@ def login_view(request):
             <hr style="border-color:#1e293b; margin:16px 0;">
             <p><strong>OPERATOR:</strong> {authenticated_user.username}</p>
             <p><strong>ROLE:</strong> <span style="color:#e5b338;">{user_role.upper()}</span></p>
-            <p style="color:#94a3b8; font-size:12px; margin-top:20px;">Click below to grant or terminate clearance for this terminal:</p>
-            <div style="margin:24px 0; display:flex; gap:12px;">
+            <p style="color:#94a3b8; font-size:12px; margin-top:20px;">Click below to grant clearance for this session:</p>
+            <div style="margin:24px 0;">
                 <a href="{approve_link}" style="background:#10b981; color:#020617; padding:12px 24px; text-decoration:none; font-weight:bold; border-radius:6px; display:inline-block;">✔ AUTHORIZE SESSION</a>
-                &nbsp;&nbsp;
-                <a href="{reject_link}" style="background:#ef4444; color:#ffffff; padding:12px 24px; text-decoration:none; font-weight:bold; border-radius:6px; display:inline-block;">✖ LOCK DOWN</a>
             </div>
-            <p style="font-size:11px; color:#64748b; margin-top:24px;">If you did not request this handshake, click LOCK DOWN immediately.</p>
+            <p style="font-size:11px; color:#64748b; margin-top:24px;">If you did not request this handshake, ignore this communication.</p>
         </div>
         """
 
         thread = threading.Thread(
             target=send_email_in_background,
-            args=(subject, plain_body, getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@axis.io'), [target_email],
+            args=(subject, plain_body, getattr(settings, 'DEFAULT_FROM_EMAIL', settings.EMAIL_HOST_USER), [target_email],
                   html_body)
         )
         thread.daemon = True
