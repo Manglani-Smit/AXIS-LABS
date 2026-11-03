@@ -163,10 +163,11 @@ def analyze_architecture(request):
     print(f"\n[DEBUG AI ENGINE] Key Present: {bool(ai_key)} | Key: {ai_key[:10] if ai_key else 'NONE'}")
 
     if ai_key:
+        # 'HTTP-Referer': 'http://127.0.0.1:8000' ki jagah:
         headers = {
             "Authorization": f"Bearer {ai_key.strip()}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "http://127.0.0.1:8000",
+            "HTTP-Referer": "https://axis-labs.onrender.com",
             "X-Title": "AXIS Labs Core"
         }
 
