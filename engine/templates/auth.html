@@ -163,6 +163,7 @@
             text-align: center;
             min-height: 18px;
             color: var(--accent-red);
+            word-break: break-word;
         }
 
         .modal-overlay {
@@ -298,23 +299,19 @@
 </div>
 
 <script>
-    function getCookie(name) {
-        let cookieValue = null;
+    function getCsrfToken() {
+        let cookieValue = '';
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
             for (let i = 0; i < cookies.length; i++) {
                 const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                if (cookie.substring(0, 10) === 'csrftoken=') {
+                    cookieValue = decodeURIComponent(cookie.substring(10));
                     break;
                 }
             }
         }
-        return cookieValue;
-    }
-
-    function getCsrfToken() {
-        return getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        return cookieValue || document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
     }
 
     const AudioEngine = {
@@ -439,21 +436,32 @@
         if (isRegister) {
             const email = document.getElementById('email').value.trim();
             try {
-                const headers = { 'Content-Type': 'application/json' };
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
                 if (csrftoken) headers['X-CSRFToken'] = csrftoken;
 
                 const res = await fetch('/register/', {
                     method: 'POST',
                     headers: headers,
+                    credentials: 'same-origin',
                     body: JSON.stringify({ username, email, password, role: currentRole })
                 });
-                const data = await res.json();
-                if (!res.ok) {
-                    toast.innerText = data.error || JSON.stringify(data);
+
+                let data;
+                try {
+                    data = await res.json();
+                } catch(e) {
+                    toast.innerText = `Server returned status ${res.status} (Non-JSON)`;
                     return;
                 }
 
-                // Show Issued Key/Token in Modal
+                if (!res.ok) {
+                    toast.innerText = data.error || (typeof data === 'string' ? data : JSON.stringify(data));
+                    return;
+                }
+
                 lastIssuedCipher = data.issued_cipher;
                 document.getElementById('register-success-modal').style.display = 'flex';
                 document.getElementById('reg-cipher-box').innerText = data.issued_cipher;
@@ -462,30 +470,50 @@
                     : 'CLIENT ORGANIZATION ID';
 
             } catch (err) {
-                toast.innerText = 'Network error during registration relay.';
+                console.error(err);
+                toast.innerText = 'Registration relay error: ' + (err.message || 'Check browser console');
             }
         } else {
             const key = document.getElementById('key').value.trim();
             try {
-                const headers = { 'Content-Type': 'application/json' };
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
                 if (csrftoken) headers['X-CSRFToken'] = csrftoken;
 
                 const res = await fetch('/login/', {
                     method: 'POST',
                     headers: headers,
+                    credentials: 'same-origin',
                     body: JSON.stringify({ username, password, key })
                 });
-                const data = await res.json();
+
+                let data;
+                try {
+                    data = await res.json();
+                } catch(e) {
+                    toast.innerText = `Login failed with status ${res.status}. Check server logs.`;
+                    return;
+                }
+
                 if (!res.ok) {
                     toast.innerText = data.error || (typeof data === 'string' ? data : JSON.stringify(data));
                     return;
                 }
+
                 if (data.status === 'PENDING') {
                     document.getElementById('handshake-modal').style.display = 'flex';
                     startPolling(username);
+                } else if (data.status === 'APPROVED' || data.token) {
+                    localStorage.setItem('axis_token', data.token);
+                    localStorage.setItem('axis_user', data.username);
+                    localStorage.setItem('axis_role', data.role);
+                    window.location.href = data.role === 'client' ? '/dashboard/client/' : '/dashboard/developer/';
                 }
             } catch (err) {
-                toast.innerText = 'Network error during login handshake.';
+                console.error(err);
+                toast.innerText = 'Handshake error: ' + (err.message || 'Check network connection');
             }
         }
     }
@@ -501,7 +529,6 @@
     function proceedToLogin() {
         document.getElementById('register-success-modal').style.display = 'none';
         if (isRegister) toggleAuthMode();
-        // Auto-fill key in form for instant login convenience
         if (lastIssuedCipher) {
             document.getElementById('key').value = lastIssuedCipher;
         }
@@ -513,12 +540,16 @@
 
         pollInterval = setInterval(async () => {
             try {
-                const headers = { 'Content-Type': 'application/json' };
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
                 if (csrftoken) headers['X-CSRFToken'] = csrftoken;
 
                 const res = await fetch('/check-login-status/', {
                     method: 'POST',
                     headers: headers,
+                    credentials: 'same-origin',
                     body: JSON.stringify({ username })
                 });
                 const data = await res.json();
