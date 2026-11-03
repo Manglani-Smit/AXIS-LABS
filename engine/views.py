@@ -4,7 +4,9 @@ import os
 import json
 import uuid
 import random
+import re
 import threading
+import traceback
 import requests
 import stripe
 
@@ -28,6 +30,7 @@ from .models import UserProfile
 
 stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
 
+
 # ==============================================================================
 # HTML TEMPLATE VIEWS
 # ==============================================================================
@@ -35,14 +38,18 @@ stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
 def landing_view(request):
     return render(request, 'landing.html')
 
+
 def auth_view(request):
     return render(request, 'auth.html')
+
 
 def developer_dashboard_view(request):
     return render(request, 'developer_dashboard.html')
 
+
 def client_dashboard_view(request):
     return render(request, 'client_dashboard.html')
+
 
 def template_workspace_view(request, template_id):
     return render(request, 'template_workspace.html', {
@@ -54,35 +61,6 @@ def template_workspace_view(request, template_id):
 # ==============================================================================
 # AI + SANDBOX EXECUTION VIEW
 # ==============================================================================
-
-import sys
-import io
-import os
-import json
-import re
-import requests
-import traceback
-from django.conf import settings
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework import status
-from django.views.decorators.csrf import csrf_exempt
-
-
-import sys
-import io
-import os
-import json
-import re
-import requests
-import traceback
-from django.conf import settings
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework import status
-from django.views.decorators.csrf import csrf_exempt
 
 @csrf_exempt
 @api_view(['POST'])
@@ -98,8 +76,7 @@ def analyze_architecture(request):
     stdout_output = ""
     is_code_executed = False
 
-    # 1. Python Sandbox Execution (print, def, class, etc.)
-    # Sirf tabhi python exec karo jab sach me python code ho, plain english prompt par nahi
+    # 1. Python Sandbox Execution
     has_exec_code = any(keyword in query for keyword in
                         ['print(', 'def ', 'class ', 'import ', 'for ', 'while ']) and not query.lower().startswith(
         ('build', 'create', 'design', 'specify', 'architect'))
@@ -119,7 +96,7 @@ def analyze_architecture(request):
         finally:
             sys.stdout = old_stdout
 
-    # 2. Intelligent Dynamic Heuristic Defaults (Specific to user's prompt)
+    # 2. Intelligent Dynamic Heuristic Defaults
     q_lower = query.lower()
     if 'crypto' in q_lower or 'trading' in q_lower or 'order-book' in q_lower:
         ai_architecture = "HFT Async Matching Engine [C++/PYTHON]"
@@ -158,12 +135,11 @@ def analyze_architecture(request):
             "4. Architecture blueprint synchronized with production cloud pod"
         ]
 
-    # 3. Live OpenRouter AI Engine Call (Universal auto router & active free slugs)
+    # 3. Live OpenRouter AI Engine Call
     ai_key = getattr(settings, 'OPENROUTER_API_KEY', '') or os.getenv('OPENROUTER_API_KEY', '')
     print(f"\n[DEBUG AI ENGINE] Key Present: {bool(ai_key)} | Key: {ai_key[:10] if ai_key else 'NONE'}")
 
     if ai_key:
-        # 'HTTP-Referer': 'http://127.0.0.1:8000' ki jagah:
         headers = {
             "Authorization": f"Bearer {ai_key.strip()}",
             "Content-Type": "application/json",
@@ -181,7 +157,6 @@ def analyze_architecture(request):
             "}"
         )
 
-        # Permanent slugs that work reliably
         live_models = [
             "openrouter/auto",
             "meta-llama/llama-3-8b-instruct:free",
@@ -199,7 +174,8 @@ def analyze_architecture(request):
                     "temperature": 0.2
                 }
 
-                res = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload, timeout=8)
+                res = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload,
+                                    timeout=8)
                 print(f"[DEBUG AI ENGINE] Model: {model_id} | Status: {res.status_code}")
 
                 if res.status_code == 200:
@@ -251,7 +227,6 @@ def create_checkout_session(request):
         data = json.loads(request.body)
         raw_price = data.get('post_data', '4500')
 
-        # Clean string amount
         amount = int(''.join(filter(str.isdigit, str(raw_price)))) or 4500
         final_amount = amount * 100
 
@@ -307,7 +282,6 @@ def success(request):
     from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', settings.EMAIL_HOST_USER)
     to_email = [user_email]
 
-    # Background thread execution
     thread = threading.Thread(
         target=send_email_in_background,
         args=(subject, plain_message, from_email, to_email, html_message)
@@ -409,7 +383,8 @@ def login_view(request):
             profile.developer_token = stored
             profile.save()
         if not input_key or (input_key != stored and input_key.replace("DEV-", "") != stored.replace("DEV-", "")):
-            return Response({'error': f"Developer token mismatch! Valid token is: {stored}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f"Developer token mismatch! Valid token is: {stored}"},
+                            status=status.HTTP_400_BAD_REQUEST)
     else:
         stored = (profile.client_id or '').strip().upper()
         if not stored:
@@ -424,22 +399,43 @@ def login_view(request):
     profile.login_approval_status = 'PENDING'
     profile.save()
 
-    base_url = "http://127.0.0.1:8000"
+    # DYNAMIC HOST RESOLUTION (Auto-detects localhost vs render HTTPS domain)
+    host = request.get_host()
+    proto = 'https' if request.is_secure() or 'onrender.com' in host else 'http'
+    base_url = f"{proto}://{host}"
+
     approve_link = f"{base_url}/verify-login/{temp_token}/approve/"
     reject_link = f"{base_url}/verify-login/{temp_token}/reject/"
 
     target_email = authenticated_user.email or getattr(settings, 'EMAIL_HOST_USER', '')
     if target_email:
-        try:
-            send_mail(
-                f"[AXIS CORE] 2FA ZERO-TRUST CLEARANCE: {authenticated_user.username.upper()}",
-                f"Operator: {authenticated_user.username}\nRole: {user_role.upper()}\n\nAPPROVE:\n{approve_link}\n\nREJECT:\n{reject_link}",
-                getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@axis.io'),
-                [target_email],
-                fail_silently=True,
-            )
-        except Exception as e:
-            print("2FA Mail Note:", e)
+        subject = f"[AXIS CORE] 2FA ZERO-TRUST CLEARANCE: {authenticated_user.username.upper()}"
+        plain_body = f"Operator: {authenticated_user.username}\nRole: {user_role.upper()}\n\nAPPROVE:\n{approve_link}\n\nREJECT:\n{reject_link}"
+
+        html_body = f"""
+        <div style="background:#0b0f19; color:#f8fafc; font-family:monospace; padding:28px; border:1px solid #1e293b; border-radius:10px; max-width:560px;">
+            <h2 style="color:#06b6d4; margin-top:0; letter-spacing:1px;">AXIS CORE // 2FA HANDSHAKE</h2>
+            <p style="color:#64748b; font-size:12px;">INCOMING ZERO-TRUST SESSION REQUEST</p>
+            <hr style="border-color:#1e293b; margin:16px 0;">
+            <p><strong>OPERATOR:</strong> {authenticated_user.username}</p>
+            <p><strong>ROLE:</strong> <span style="color:#e5b338;">{user_role.upper()}</span></p>
+            <p style="color:#94a3b8; font-size:12px; margin-top:20px;">Click below to grant or terminate clearance for this terminal:</p>
+            <div style="margin:24px 0; display:flex; gap:12px;">
+                <a href="{approve_link}" style="background:#10b981; color:#020617; padding:12px 24px; text-decoration:none; font-weight:bold; border-radius:6px; display:inline-block;">✔ AUTHORIZE SESSION</a>
+                &nbsp;&nbsp;
+                <a href="{reject_link}" style="background:#ef4444; color:#ffffff; padding:12px 24px; text-decoration:none; font-weight:bold; border-radius:6px; display:inline-block;">✖ LOCK DOWN</a>
+            </div>
+            <p style="font-size:11px; color:#64748b; margin-top:24px;">If you did not request this handshake, click LOCK DOWN immediately.</p>
+        </div>
+        """
+
+        thread = threading.Thread(
+            target=send_email_in_background,
+            args=(subject, plain_body, getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@axis.io'), [target_email],
+                  html_body)
+        )
+        thread.daemon = True
+        thread.start()
 
     request.session['email'] = authenticated_user.email
     return Response({
@@ -455,17 +451,19 @@ def verify_login_action(request, token, action):
     try:
         profile = UserProfile.objects.get(approval_token=token)
     except UserProfile.DoesNotExist:
-        return Response({'error': 'Invalid handshake link.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'Invalid or expired handshake link.'}, status=status.HTTP_404_NOT_FOUND)
 
     if action == 'approve':
         profile.login_approval_status = 'APPROVED'
         profile.save()
-        return Response({'status': 'AUTHORIZED', 'message': 'Handshake confirmed.'}, status=status.HTTP_200_OK)
+        return Response({'status': 'AUTHORIZED', 'message': 'Handshake confirmed. You may return to the console.'},
+                        status=status.HTTP_200_OK)
     elif action == 'reject':
         profile.login_approval_status = 'REJECTED'
         profile.approval_token = None
         profile.save()
-        return Response({'status': 'TERMINATED', 'message': 'Session locked down.'}, status=status.HTTP_200_OK)
+        return Response({'status': 'TERMINATED', 'message': 'Session locked down and invalidated.'},
+                        status=status.HTTP_200_OK)
 
     return Response({'error': 'Invalid parameter.'}, status=status.HTTP_400_BAD_REQUEST)
 
