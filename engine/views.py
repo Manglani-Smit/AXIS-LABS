@@ -351,7 +351,6 @@ def register_view(request):
         'issued_cipher': cipher
     }, status=status.HTTP_201_CREATED)
 
-
 @csrf_exempt
 @api_view(['POST'])
 @authentication_classes([])
@@ -385,8 +384,7 @@ def login_view(request):
             profile.developer_token = stored
             profile.save()
         if not input_key or (input_key != stored and input_key.replace("DEV-", "") != stored.replace("DEV-", "")):
-            return Response({'error': f"Developer token mismatch! Valid token is: {stored}"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f"Developer token mismatch! Valid token is: {stored}"}, status=status.HTTP_400_BAD_REQUEST)
     else:
         stored = (profile.client_id or '').strip().upper()
         if not stored:
@@ -409,37 +407,21 @@ def login_view(request):
     approve_link = f"{base_url}/verify-login/{temp_token}/approve/"
     reject_link = f"{base_url}/verify-login/{temp_token}/reject/"
 
-    # FALLBACK PRINT: Direct terminal log link
     print("\n" + "="*80)
-    print(f">> [2FA CLEARANCE REQUESTED FOR OPERATOR: {authenticated_user.username.upper()}]")
-    print(f">> DIRECT 2FA APPROVE LINK: {approve_link}")
-    print(f">> DIRECT 2FA REJECT LINK:  {reject_link}")
+    print(f">> 2FA APPROVE LINK: {approve_link}")
     print("="*80 + "\n")
 
+    # Mail dispatch with safe fallback
     target_email = authenticated_user.email or getattr(settings, 'EMAIL_HOST_USER', '')
     if target_email:
-        subject = f"[AXIS CORE] 2FA ZERO-TRUST CLEARANCE: {authenticated_user.username.upper()}"
-        plain_body = f"Operator: {authenticated_user.username}\nRole: {user_role.upper()}\n\nAPPROVE:\n{approve_link}\n\nREJECT:\n{reject_link}"
-
-        html_body = f"""
-        <div style="background:#0b0f19; color:#f8fafc; font-family:monospace; padding:28px; border:1px solid #1e293b; border-radius:10px; max-width:560px;">
-            <h2 style="color:#06b6d4; margin-top:0; letter-spacing:1px;">AXIS CORE // 2FA HANDSHAKE</h2>
-            <p style="color:#64748b; font-size:12px;">INCOMING ZERO-TRUST SESSION REQUEST</p>
-            <hr style="border-color:#1e293b; margin:16px 0;">
-            <p><strong>OPERATOR:</strong> {authenticated_user.username}</p>
-            <p><strong>ROLE:</strong> <span style="color:#e5b338;">{user_role.upper()}</span></p>
-            <p style="color:#94a3b8; font-size:12px; margin-top:20px;">Click below to grant clearance for this session:</p>
-            <div style="margin:24px 0;">
-                <a href="{approve_link}" style="background:#10b981; color:#020617; padding:12px 24px; text-decoration:none; font-weight:bold; border-radius:6px; display:inline-block;">✔ AUTHORIZE SESSION</a>
-            </div>
-            <p style="font-size:11px; color:#64748b; margin-top:24px;">If you did not request this handshake, ignore this communication.</p>
-        </div>
-        """
-
         thread = threading.Thread(
             target=send_email_in_background,
-            args=(subject, plain_body, getattr(settings, 'DEFAULT_FROM_EMAIL', settings.EMAIL_HOST_USER), [target_email],
-                  html_body)
+            args=(
+                f"[AXIS CORE] 2FA ZERO-TRUST CLEARANCE: {authenticated_user.username.upper()}",
+                f"Approve:\n{approve_link}",
+                getattr(settings, 'DEFAULT_FROM_EMAIL', settings.EMAIL_HOST_USER),
+                [target_email]
+            )
         )
         thread.daemon = True
         thread.start()
@@ -448,7 +430,8 @@ def login_view(request):
     return Response({
         'status': 'PENDING',
         'username': authenticated_user.username,
-        'role': user_role
+        'role': user_role,
+        'approve_link': approve_link  # Direct link frontend ko di
     }, status=status.HTTP_200_OK)
 
 
